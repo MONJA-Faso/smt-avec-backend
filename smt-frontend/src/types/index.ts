@@ -6,6 +6,13 @@ export interface User {
   email: string;
   role: string;
   isActive?: boolean;
+  lastLogin?: string;
+  profileImage?: string;
+  preferences?: {
+    language?: string;
+    timezone?: string;
+    currency?: string;
+  };
   createdAt?: string;
   updatedAt?: string;
 }
@@ -16,6 +23,15 @@ export interface Account {
   type: string;
   balance: number;
   currency?: string;
+  accountNumber?: string;
+  bankName?: string;
+  bankBranch?: string;
+  description?: string;
+  openingDate?: string;
+  closingDate?: string;
+  lastTransactionDate?: string;
+  lastReconciliationDate?: string;
+  reconciledBalance?: number;
   isActive?: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -28,10 +44,27 @@ export interface Transaction {
   description: string;
   category: string;
   subcategory?: string;
-  accountId: string;
+  accountId: string; // ObjectId compatible
   date: string;
   reference?: string;
+  paymentMethod?: string;
+  vatAmount?: number;
+  vatRate?: number;
+  isVatIncluded?: boolean;
+  thirdParty?: {
+    name?: string;
+    contact?: string;
+    address?: string;
+  };
+  notes?: string;
+  isReconciled?: boolean;
+  reconciledDate?: string;
   documentId?: string;
+  createdBy?: string;
+  modifiedBy?: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
+  deletedBy?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -42,10 +75,21 @@ export interface Immobilisation {
   category: string;
   purchaseAmount: number;
   currentValue: number;
-  acquisitionDate?: string;
-  purchaseDate?: string; // Pour compatibilité avec mockData
+  purchaseDate: string; // Champ principal harmonisé avec backend
+  description?: string;
+  serialNumber?: string;
+  supplier?: {
+    name?: string;
+    contact?: string;
+    address?: string;
+  };
+  location?: string;
+  amortisationType?: string;
   duration: number;
   amortisationRate: number;
+  yearlyAmortisation?: number;
+  accumulatedAmortisation?: number;
+  residualValue?: number;
   status?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -68,7 +112,7 @@ export interface Stock {
 export interface CreanceEtDette {
   id: string;
   type: 'creance' | 'dette';
-  title: string;
+  name: string;
   amount: number;
   thirdParty: string;
   dueDate: string;

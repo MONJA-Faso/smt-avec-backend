@@ -1,10 +1,20 @@
 import axios, { AxiosResponse } from 'axios';
+import type { User, Account, Transaction, Immobilisation, Stock, CreanceEtDette, Document, SMTSettings } from '../types/index';
 
 // Configuration de base pour l'API
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-// Instance Axios configurée
+// Instance Axios principale avec intercepteurs
 const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Client séparé pour l'authentification (sans intercepteurs pour éviter les références circulaires)
+const authClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
   headers: {
@@ -72,8 +82,22 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // Tenter de rafraîchir le token
-        const { token } = await authApi.refreshToken();
+        // Tenter de rafraîchir le token avec le client dédié
+        const currentToken = localStorage.getItem('smt-token');
+        const refreshResponse = await authClient.post('/auth/refresh-token', {}, {
+          headers: { Authorization: `Bearer ${currentToken}` }
+        });
+        
+        if (!refreshResponse.data.success) {
+          throw new Error('Échec du rafraîchissement du token');
+        }
+        
+        const { token, user } = refreshResponse.data.data;
+        localStorage.setItem('smt-token', token);
+        if (user) {
+          localStorage.setItem('smt-user', JSON.stringify(user));
+        }
+        
         isRefreshing = false;
         
         // Mettre à jour le header d'autorisation pour la requête originale
@@ -103,114 +127,11 @@ apiClient.interceptors.response.use(
   }
 );
 
-// Types pour l'API
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Account {
-  id: string;
-  name: string;
-  type: string;
-  balance: number;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Transaction {
-  id: string;
-  type: 'recette' | 'depense';
-  amount: number;
-  description: string;
-  category: string;
-  subcategory?: string;
-  accountId: string;
-  date: string;
-  reference?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Immobilisation {
-  id: string;
-  name: string;
-  category: string;
-  purchaseAmount: number;
-  currentValue: number;
-  acquisitionDate: string;
-  duration: number;
-  amortisationRate: number;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Stock {
-  id: string;
-  name: string;
-  category: string;
-  quantity: number;
-  unitPrice: number;
-  totalValue: number;
-  unit: string;
-  supplier?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreanceEtDette {
-  id: string;
-  type: 'creance' | 'dette';
-  title: string;
-  amount: number;
-  thirdParty: string;
-  dueDate: string;
-  status: string;
-  description?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Document {
-  id: string;
-  name: string;
-  type: string;
-  size: number;
-  url: string;
-  transactionId?: string;
-  uploadDate: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface SMTSettings {
-  companyName: string;
-  companyAddress: string;
-  companyPhone: string;
-  companyEmail: string;
-  currency: string;
-  defaultAccountType: string;
-  autoGenerateReference: boolean;
-  enableMultiCurrency: boolean;
-  fiscalYearStart: string;
-  backupFrequency: string;
-  emailNotifications: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
 // API d'authentification
 export const authApi = {
   async login(email: string, password: string): Promise<{ user: User; token: string }> {
     const response: AxiosResponse<{ success: boolean; data: { user: User; token: string } }> = 
-      await apiClient.post('/auth/login', { email, password });
+      await authClient.post('/auth/login', { email, password });
     
     if (response.data.success) {
       const { user, token } = response.data.data;
@@ -223,7 +144,7 @@ export const authApi = {
 
   async register(userData: { name: string; email: string; password: string; role?: string }): Promise<{ user: User; token: string }> {
     const response: AxiosResponse<{ success: boolean; data: { user: User; token: string } }> = 
-      await apiClient.post('/auth/register', userData);
+      await authClient.post('/auth/register', userData);
     
     if (response.data.success) {
       const { user, token } = response.data.data;
@@ -266,8 +187,11 @@ export const authApi = {
   },
   
   async refreshToken(): Promise<{ token: string; user: User }> {
+    const token = localStorage.getItem('smt-token');
     const response: AxiosResponse<{ success: boolean; data: { token: string; user: User } }> = 
-      await apiClient.post('/auth/refresh-token');
+      await authClient.post('/auth/refresh-token', {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
     
     if (response.data.success) {
       const { token, user } = response.data.data;
