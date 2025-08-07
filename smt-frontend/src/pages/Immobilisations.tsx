@@ -351,10 +351,7 @@ export function Immobilisations() {
         purchaseDate: newImmo.dateAcquisition,
         purchaseAmount: valeurOriginale,
         duration: dureeAmortissement,
-        category: newImmo.categorie,
-        amortisationRate: tauxAmortissement,
-        currentValue: valeurOriginale,
-        status: 'en_service'
+        category: newImmo.categorie
       };
       
       console.log('Données envoyées:', immobilisationData);
