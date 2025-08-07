@@ -284,7 +284,7 @@ export function Immobilisations() {
 
   // Calcul automatique de l'amortissement
   const calculateAmortissement = (immo: Immobilisation) => {
-    const dateAcq = new Date(immo.dateAcquisition || immo.acquisitionDate || immo.purchaseDate || '');
+    const dateAcq = new Date(immo.dateAcquisition || immo.purchaseDate || '');
     const today = new Date();
     const moisEcoules = (today.getFullYear() - dateAcq.getFullYear()) * 12 + (today.getMonth() - dateAcq.getMonth());
     const anneesEcoulees = Math.max(0, moisEcoules / 12);
@@ -395,7 +395,7 @@ export function Immobilisations() {
       ...immo,
       id: immo._id, // Utilisation de _id MongoDB comme id
       designation: immo.designation || immo.name || '',
-      dateAcquisition: immo.dateAcquisition || immo.acquisitionDate || immo.purchaseDate || '',
+      dateAcquisition: immo.dateAcquisition || immo.purchaseDate || '',
       valeurOriginale: immo.valeurOriginale || immo.purchaseAmount || 0,
       dureeAmortissement: immo.dureeAmortissement || immo.duration || 0,
       tauxAmortissement: immo.tauxAmortissement || immo.amortisationRate || 0,

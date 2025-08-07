@@ -164,7 +164,7 @@ const securityLogger = (req, res, next) => {
 
 // Middleware pour vérifier l'origine des requêtes
 const validateOrigin = (req, res, next) => {
-  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'];
+  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173'];
   const origin = req.get('Origin');
 
   // Autoriser les requêtes sans origine (mobile apps, etc.)
