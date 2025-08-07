@@ -24,14 +24,14 @@ const immobilisationSchema = new mongoose.Schema({
   },
   currentValue: {
     type: Number,
-    required: [true, 'La valeur actuelle est requise'],
     min: [0, 'La valeur actuelle ne peut pas être négative']
+    // Calculé automatiquement par le hook pre-save
   },
   amortisationRate: {
     type: Number,
-    required: [true, 'Le taux d\'amortissement est requis'],
     min: [0, 'Le taux d\'amortissement ne peut pas être négatif'],
     max: [100, 'Le taux d\'amortissement ne peut pas dépasser 100%']
+    // Calculé automatiquement par le hook pre-save
   },
   category: {
     type: String,
