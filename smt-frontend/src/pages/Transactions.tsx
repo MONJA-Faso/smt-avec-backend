@@ -78,7 +78,7 @@ function TransactionForm({
     reference: transaction?.reference || ''
   });
 
-  const { accounts } = useAccounts();
+  const { accounts = [] } = useAccounts();
 
   const categories = formData.type === 'recette' 
     ? transactionCategories.recettes 
@@ -151,9 +151,10 @@ function TransactionForm({
               <SelectValue placeholder="Sélectionner un compte" />
             </SelectTrigger>
             <SelectContent>
-              {accounts.map((account) => (
+              <SelectItem value="all">Tous</SelectItem>
+              {accounts && accounts.map((account) => (
                 <SelectItem key={account.id} value={account.id}>
-                  {account.name} ({formatCurrency(account.balance)})
+                  {account.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -310,12 +311,12 @@ export function Transactions() {
 
   // Calculs des totaux
   const totalRecettes = transactions
-    .filter(t => t.type === 'recette')
-    .reduce((sum, t) => sum + t.amount, 0);
+    ? transactions.filter(t => t.type === 'recette').reduce((sum, t) => sum + t.amount, 0)
+    : 0;
   
   const totalDepenses = transactions
-    .filter(t => t.type === 'depense')
-    .reduce((sum, t) => sum + t.amount, 0);
+    ? transactions.filter(t => t.type === 'depense').reduce((sum, t) => sum + t.amount, 0)
+    : 0;
 
   if (loading) {
     return (
@@ -503,7 +504,7 @@ export function Transactions() {
       <Card id="transactions-table">
         <CardHeader>
           <CardTitle>
-            Liste des transactions ({transactions.length})
+            Liste des transactions ({transactions ? transactions.length : 0})
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -528,7 +529,7 @@ export function Transactions() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transactions.map((transaction) => (
+                {transactions && transactions.map((transaction) => (
                   <TableRow key={transaction.id}>
                     <TableCell>
                       {new Date(transaction.date).toLocaleDateString('fr-FR')}
@@ -587,11 +588,11 @@ export function Transactions() {
               </TableBody>
             </Table>
             
-            {transactions.length === 0 && !loading && (
-              <div className="text-center py-8 text-gray-500">
-                Aucune transaction trouvée
-              </div>
-            )}
+            {Array.isArray(transactions) && transactions.length === 0 && !loading && (
+  <div className="text-center py-8 text-gray-500">
+    Aucune transaction trouvée
+  </div>
+)}
           </div>
         </CardContent>
       </Card>

@@ -228,7 +228,9 @@ const checkResourcePermission = (resourceType) => {
 };
 
 module.exports = {
+  authenticate,
   protect: authenticate,
+  authorize,
   restrictTo: authorize,
   authorizeOwnerOrAdmin,
   optionalAuth,

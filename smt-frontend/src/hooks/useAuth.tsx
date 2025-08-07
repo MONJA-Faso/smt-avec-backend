@@ -1,13 +1,6 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { User } from '../data/mockData';
-import { authApi } from '../services/api';
-
-interface AuthContextType {
-  user: User | null;
-  loading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => Promise<void>;
-}
+import { User, AuthContextType } from '../types';
+import { authApi } from '../services/realApi';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -27,12 +20,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Vérifier si l'utilisateur est déjà connecté
     const loadUser = async () => {
       try {
-        const savedUser = localStorage.getItem('smt-user');
-        if (savedUser) {
-          setUser(JSON.parse(savedUser));
+        const token = localStorage.getItem('smt-token');
+        if (token) {
+          // Vérifier si le token est valide en récupérant l'utilisateur actuel
+          const currentUser = await authApi.getCurrentUser();
+          setUser(currentUser);
+          // Rafraîchir le token si nécessaire
+          if (currentUser) {
+            try {
+              const { user: refreshedUser } = await authApi.refreshToken();
+              // Mettre à jour l'utilisateur avec les données les plus récentes
+              setUser(refreshedUser);
+            } catch (refreshError) {
+              console.warn('Impossible de rafraîchir le token:', refreshError);
+              // Si le rafraîchissement échoue mais que l'utilisateur est toujours valide,
+              // on continue avec le token actuel
+            }
+          }
         }
       } catch (error) {
         console.error('Erreur lors du chargement de l\'utilisateur:', error);
+        // Token invalide, nettoyer le localStorage
+        localStorage.removeItem('smt-token');
+        localStorage.removeItem('smt-user');
       } finally {
         setLoading(false);
       }
@@ -44,13 +54,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setLoading(true);
-      const user = await authApi.login(email, password);
-      if (user) {
-        setUser(user);
-        localStorage.setItem('smt-user', JSON.stringify(user));
-        return true;
-      }
-      return false;
+      const { user } = await authApi.login(email, password);
+      setUser(user);
+      return true;
     } catch (error) {
       console.error('Erreur lors de la connexion:', error);
       return false;
@@ -62,10 +68,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async (): Promise<void> => {
     try {
       await authApi.logout();
-      setUser(null);
-      localStorage.removeItem('smt-user');
     } catch (error) {
       console.error('Erreur lors de la déconnexion:', error);
+    } finally {
+      setUser(null);
+    }
+  };
+
+  const updateUser = async (updates: Partial<User>): Promise<void> => {
+    try {
+      const updatedUser = await authApi.updateProfile(updates);
+      setUser(updatedUser);
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du profil:', error);
+      throw error;
     }
   };
 
@@ -74,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     login,
     logout,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

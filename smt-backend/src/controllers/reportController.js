@@ -318,9 +318,159 @@ const calculateAccountBalance = async (accountId, date) => {
   return balance;
 };
 
+// @desc    Obtenir les statistiques du tableau de bord
+// @route   GET /api/reports/dashboard
+// @access  Private
+const getDashboardStats = asyncHandler(async (req, res) => {
+  // Récupérer l'utilisateur connecté
+  const userId = req.user._id;
+  
+  // Obtenir le solde total des comptes de trésorerie
+  const treasuryAccounts = await Account.find({
+    isActive: true,
+    numero: { $regex: '^5' } // Comptes de trésorerie
+  });
+  
+  let totalBalance = 0;
+  for (const account of treasuryAccounts) {
+    totalBalance += await calculateAccountBalance(account._id, new Date());
+  }
+  
+  // Calculer les revenus et dépenses du mois en cours
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  
+  // Obtenir les comptes de charges et produits
+  const revenueAccounts = await Account.find({
+    isActive: true,
+    numero: { $regex: '^7' } // Comptes de produits
+  });
+  
+  const expenseAccounts = await Account.find({
+    isActive: true,
+    numero: { $regex: '^6' } // Comptes de charges
+  });
+  
+  // Calculer les revenus du mois
+  let monthlyRevenue = 0;
+  for (const account of revenueAccounts) {
+    const transactions = await Transaction.find({
+      $or: [
+        { compteDebit: account._id },
+        { compteCredit: account._id }
+      ],
+      date: { $gte: startOfMonth, $lte: endOfMonth },
+      statut: 'validee'
+    });
+    
+    transactions.forEach(transaction => {
+      if (transaction.compteCredit.toString() === account._id.toString()) {
+        monthlyRevenue += transaction.montant;
+      }
+    });
+  }
+  
+  // Calculer les dépenses du mois
+  let monthlyExpenses = 0;
+  for (const account of expenseAccounts) {
+    const transactions = await Transaction.find({
+      $or: [
+        { compteDebit: account._id },
+        { compteCredit: account._id }
+      ],
+      date: { $gte: startOfMonth, $lte: endOfMonth },
+      statut: 'validee'
+    });
+    
+    transactions.forEach(transaction => {
+      if (transaction.compteDebit.toString() === account._id.toString()) {
+        monthlyExpenses += transaction.montant;
+      }
+    });
+  }
+  
+  // Calculer le résultat net
+  const netResult = monthlyRevenue - monthlyExpenses;
+  
+  // Récupérer les transactions récentes
+  const recentTransactions = await Transaction.find({
+    statut: 'validee'
+  })
+  .sort({ date: -1 })
+  .limit(5)
+  .populate('compteDebit compteCredit');
+  
+  // Données mensuelles pour le graphique (6 derniers mois)
+  const monthlyData = [];
+  for (let i = 5; i >= 0; i--) {
+    const month = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
+    const monthName = month.toLocaleDateString('fr-FR', { month: 'short' });
+    
+    let recettes = 0;
+    let depenses = 0;
+    
+    // Calculer les recettes du mois
+    for (const account of revenueAccounts) {
+      const transactions = await Transaction.find({
+        $or: [
+          { compteDebit: account._id },
+          { compteCredit: account._id }
+        ],
+        date: { $gte: month, $lte: monthEnd },
+        statut: 'validee'
+      });
+      
+      transactions.forEach(transaction => {
+        if (transaction.compteCredit.toString() === account._id.toString()) {
+          recettes += transaction.montant;
+        }
+      });
+    }
+    
+    // Calculer les dépenses du mois
+    for (const account of expenseAccounts) {
+      const transactions = await Transaction.find({
+        $or: [
+          { compteDebit: account._id },
+          { compteCredit: account._id }
+        ],
+        date: { $gte: month, $lte: monthEnd },
+        statut: 'validee'
+      });
+      
+      transactions.forEach(transaction => {
+        if (transaction.compteDebit.toString() === account._id.toString()) {
+          depenses += transaction.montant;
+        }
+      });
+    }
+    
+    monthlyData.push({
+      month: monthName,
+      recettes,
+      depenses
+    });
+  }
+  
+  res.json({
+    success: true,
+    data: {
+      totalBalance,
+      monthlyRevenue,
+      monthlyExpenses,
+      netResult,
+      recentTransactions,
+      monthlyData
+    }
+  });
+});
+
 module.exports = {
   getReports,
   generateBalanceSheet,
   generateIncomeStatement,
-  generateCashFlowStatement
+  generateCashFlowStatement,
+  getDashboardStats
 };

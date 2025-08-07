@@ -1,18 +1,10 @@
 const express = require('express');
 const {
   getUsers,
-  getUser,
-  createUser,
-  updateUser,
-  deleteUser,
-  updateUserStatus,
-  resetUserPassword,
-  getUserActivity,
-  getUserPermissions,
-  updateUserPermissions
+  createUser
 } = require('../controllers/userController');
 const { protect, restrictTo } = require('../middleware/auth');
-const { validateUser, validateUserUpdate } = require('../middleware/validation');
+const { validate, userValidation } = require('../middleware/validation');
 
 const router = express.Router();
 
@@ -25,18 +17,6 @@ router.use(restrictTo('admin'));
 // Routes principales
 router.route('/')
   .get(getUsers)
-  .post(validateUser, createUser);
-
-router.route('/:id')
-  .get(getUser)
-  .put(validateUserUpdate, updateUser)
-  .delete(deleteUser);
-
-// Routes spécialisées
-router.patch('/:id/status', updateUserStatus);
-router.post('/:id/reset-password', resetUserPassword);
-router.get('/:id/activity', getUserActivity);
-router.get('/:id/permissions', getUserPermissions);
-router.put('/:id/permissions', updateUserPermissions);
+  .post(validate(userValidation.register), createUser);
 
 module.exports = router;

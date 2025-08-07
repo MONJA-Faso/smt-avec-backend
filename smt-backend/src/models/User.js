@@ -58,14 +58,16 @@ const userSchema = new mongoose.Schema({
   collection: 'users'
 });
 
-// Index pour améliorer les performances
-userSchema.index({ email: 1 });
+// ⚠️ Supprimer cet index redondant (déjà couvert par `unique: true`)
+// userSchema.index({ email: 1 });
+
+// Index utile conservé
 userSchema.index({ role: 1 });
 
-// Middleware pour hasher le mot de passe avant sauvegarde
+// Middleware pour hasher le mot de passe
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
-  
+
   try {
     const salt = await bcrypt.genSalt(parseInt(process.env.BCRYPT_ROUNDS) || 12);
     this.password = await bcrypt.hash(this.password, salt);
@@ -80,7 +82,7 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// Méthode pour obtenir les informations publiques de l'utilisateur
+// Méthode pour retourner un profil public sans mot de passe
 userSchema.methods.getPublicProfile = function() {
   const userObject = this.toObject();
   delete userObject.password;

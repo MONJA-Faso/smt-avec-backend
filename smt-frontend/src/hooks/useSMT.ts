@@ -8,7 +8,7 @@ import {
   CreanceEtDette, 
   Document, 
   SMTSettings 
-} from '../data/mockData';
+} from '../types'; // Importer depuis types au lieu de mockData
 import { 
   accountsApi, 
   transactionsApi, 
@@ -54,7 +54,7 @@ export function useAccounts() {
     }
   };
 
-  return { accounts, loading, error, fetchAccounts, updateAccount };
+  return { accounts: accounts || [], loading, error, fetchAccounts, updateAccount };
 }
 
 // Hook pour les transactions

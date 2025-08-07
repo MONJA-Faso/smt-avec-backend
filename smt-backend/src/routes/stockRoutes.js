@@ -7,16 +7,10 @@ const {
   deleteStock,
   updateStockQuantity,
   getStockMovements,
-  addStockMovement,
-  getStocksByCategory,
-  getLowStockItems,
-  getStockValuation,
-  exportStocks,
-  importStocks,
-  generateStockReport
+  addStockMovement
 } = require('../controllers/stockController');
 const { protect, restrictTo } = require('../middleware/auth');
-const { validateStock, validateStockUpdate, validateStockMovement } = require('../middleware/validation');
+const { validate, stockValidation } = require('../middleware/validation');
 const { upload } = require('../middleware/upload');
 
 const router = express.Router();
@@ -27,31 +21,16 @@ router.use(protect);
 // Routes principales
 router.route('/')
   .get(getStocks)
-  .post(validateStock, createStock);
+  .post(validate(stockValidation.create), createStock);
 
 router.route('/:id')
   .get(getStock)
-  .put(validateStockUpdate, updateStock)
-  .delete(restrictTo('admin', 'manager'), deleteStock);
-
-// Gestion des mouvements de stock
-router.get('/:id/movements', getStockMovements);
-router.post('/:id/movements', validateStockMovement, addStockMovement);
-router.put('/:id/quantity', updateStockQuantity);
+  .put(validate(stockValidation.update), updateStock)
+  .delete(restrictTo('admin', 'user'), deleteStock);
 
 // Routes spécialisées
-router.get('/category/:category', getStocksByCategory);
-router.get('/alerts/low-stock', getLowStockItems);
-router.get('/valuation/total', getStockValuation);
-router.get('/reports/complete', generateStockReport);
-
-// Import/Export
-router.post('/import', 
-  restrictTo('admin', 'manager'), 
-  upload.single('file'), 
-  importStocks
-);
-
-router.get('/export', exportStocks);
+router.put('/:id/quantity', updateStockQuantity);
+router.get('/:id/movements', getStockMovements);
+router.post('/:id/movements', addStockMovement);
 
 module.exports = router;

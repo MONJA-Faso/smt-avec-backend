@@ -5,19 +5,13 @@ const {
   createTransaction,
   updateTransaction,
   deleteTransaction,
-  getTransactionsByDateRange,
-  getTransactionsByAccount,
-  getTransactionsByType,
-  validateTransaction,
-  cancelTransaction,
+  getTransactionStats,
+  getTransactionsByCategory,
   duplicateTransaction,
-  importTransactions,
-  exportTransactions,
-  getTransactionSummary,
-  getMonthlyReport
+  exportTransactions
 } = require('../controllers/transactionController');
 const { protect, restrictTo } = require('../middleware/auth');
-const { validateTransactionData, validateTransactionUpdate } = require('../middleware/validation');
+const { validate, transactionValidation } = require('../middleware/validation');
 const { upload } = require('../middleware/upload');
 
 const router = express.Router();
@@ -28,40 +22,17 @@ router.use(protect);
 // Routes principales
 router.route('/')
   .get(getTransactions)
-  .post(validateTransactionData, createTransaction);
+  .post(validate(transactionValidation.create), createTransaction);
 
 router.route('/:id')
   .get(getTransaction)
-  .put(validateTransactionUpdate, updateTransaction)
-  .delete(restrictTo('admin', 'manager'), deleteTransaction);
+  .put(validate(transactionValidation.update), updateTransaction)
+  .delete(restrictTo('admin', 'user'), deleteTransaction);
 
 // Routes spécialisées
-router.get('/date-range/:startDate/:endDate', getTransactionsByDateRange);
-router.get('/account/:accountId', getTransactionsByAccount);
-router.get('/type/:type', getTransactionsByType);
-router.get('/summary/monthly', getMonthlyReport);
-router.get('/summary/overview', getTransactionSummary);
-
-// Actions sur les transactions
-router.post('/:id/validate', 
-  restrictTo('admin', 'manager'), 
-  validateTransaction
-);
-
-router.post('/:id/cancel', 
-  restrictTo('admin', 'manager'), 
-  cancelTransaction
-);
-
+router.get('/stats', getTransactionStats);
+router.get('/category/:category', getTransactionsByCategory);
 router.post('/:id/duplicate', duplicateTransaction);
-
-// Import/Export
-router.post('/import', 
-  restrictTo('admin', 'manager'), 
-  upload.single('file'), 
-  importTransactions
-);
-
 router.get('/export', exportTransactions);
 
 module.exports = router;

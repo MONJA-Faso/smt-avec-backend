@@ -3,11 +3,13 @@ const mongoose = require('mongoose');
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000,
+      maxPoolSize: 10,
+      bufferCommands: false,
+      // bufferMaxEntries: 0
     });
 
-    console.log(`MongoDB Atlas connecté: ${conn.connection.host}`);
+    console.log(`MongoDB connecté: ${conn.connection.host}`);
     
     // Gestion des événements de connexion
     mongoose.connection.on('error', (err) => {
@@ -16,6 +18,10 @@ const connectDB = async () => {
 
     mongoose.connection.on('disconnected', () => {
       console.log('MongoDB déconnecté');
+    });
+
+    mongoose.connection.on('connected', () => {
+      console.log('MongoDB connecté avec succès');
     });
 
     // Gestion de la fermeture gracieuse
@@ -28,7 +34,8 @@ const connectDB = async () => {
     return conn;
   } catch (error) {
     console.error('Erreur de connexion à MongoDB:', error);
-    process.exit(1);
+    console.log('Tentative de continuer sans MongoDB...');
+    return null;
   }
 };
 

@@ -127,7 +127,7 @@ export function Login() {
             <div className="text-sm text-blue-800">
               <p><strong>Administrateur :</strong></p>
               <p>Email: admin@smt.com</p>
-              <p>Mot de passe: n'importe lequel</p>
+              <p>Mot de passe: admin123*</p>
             </div>
             <div className="text-sm text-blue-800">
               <p><strong>Utilisateur :</strong></p>

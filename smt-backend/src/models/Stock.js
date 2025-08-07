@@ -167,7 +167,8 @@ const stockSchema = new mongoose.Schema({
 // Index pour améliorer les performances
 stockSchema.index({ category: 1, status: 1 });
 stockSchema.index({ quantity: 1 });
-stockSchema.index({ sku: 1 }, { sparse: true });
+// Suppression de l'index sku pour éviter doublon
+// stockSchema.index({ sku: 1 }, { sparse: true });
 stockSchema.index({ barcode: 1 }, { sparse: true });
 stockSchema.index({ 'supplier.name': 1 });
 

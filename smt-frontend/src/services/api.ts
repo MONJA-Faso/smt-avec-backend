@@ -1,13 +1,19 @@
-// Services API simulés pour SMT
-import { 
-  mockUsers, 
-  mockAccounts, 
-  mockTransactions, 
-  mockImmobilisations, 
-  mockStocks, 
-  mockCreancesEtDettes, 
-  mockDocuments, 
-  mockSettings,
+// Services API - redirection vers l'API réelle
+// Ce fichier redirige vers la nouvelle API réelle pour assurer la compatibilité
+import {
+  authApi as realAuthApi,
+  accountsApi as realAccountsApi,
+  transactionsApi as realTransactionsApi,
+  immobilisationsApi as realImmobilisationsApi,
+  stocksApi as realStocksApi,
+  creancesEtDettesApi as realCreancesEtDettesApi,
+  documentsApi as realDocumentsApi,
+  settingsApi as realSettingsApi,
+  reportsApi as realReportsApi
+} from './realApi';
+
+// Import des types unifiés
+import {
   User,
   Account,
   Transaction,
@@ -15,50 +21,59 @@ import {
   Stock,
   CreanceEtDette,
   Document,
-  SMTSettings
-} from '../data/mockData';
+  SMTSettings,
+  DashboardStats,
+  CompteResultat,
+  Bilan
+} from '../types';
 
-// Simulation de délai réseau
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-// API d'authentification
+// API d'authentification - redirection vers l'API réelle
 export const authApi = {
   async login(email: string, password: string): Promise<User | null> {
-    await delay(500);
-    const user = mockUsers.find(u => u.email === email);
-    // Simulation simple: n'importe quel mot de passe fonctionne
-    return user || null;
+    try {
+      const { user } = await realAuthApi.login(email, password);
+      return user;
+    } catch (error) {
+      console.error('Erreur lors de la connexion:', error);
+      return null;
+    }
   },
 
   async getCurrentUser(): Promise<User | null> {
-    await delay(200);
-    // Simulation: retourne l'admin par défaut
-    return mockUsers[0];
+    try {
+      const user = await realAuthApi.getCurrentUser();
+      return user;
+    } catch (error) {
+      console.error('Erreur lors de la récupération de l\'utilisateur:', error);
+      return null;
+    }
   },
 
   async logout(): Promise<void> {
-    await delay(200);
-    localStorage.removeItem('smt-user');
+    await realAuthApi.logout();
   }
 };
 
-// API des comptes
+// API des comptes - redirection vers l'API réelle
 export const accountsApi = {
   async getAccounts(): Promise<Account[]> {
-    await delay(300);
-    return [...mockAccounts];
+    return await realAccountsApi.getAccounts();
   },
 
   async updateAccount(id: string, updates: Partial<Account>): Promise<Account> {
-    await delay(400);
-    const account = mockAccounts.find(a => a.id === id);
-    if (!account) throw new Error('Compte non trouvé');
-    Object.assign(account, updates);
-    return account;
+    return await realAccountsApi.updateAccount(id, updates);
+  },
+
+  async createAccount(accountData: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>): Promise<Account> {
+    return await realAccountsApi.createAccount(accountData);
+  },
+
+  async deleteAccount(id: string): Promise<void> {
+    await realAccountsApi.deleteAccount(id);
   }
 };
 
-// API des transactions
+// API des transactions - redirection vers l'API réelle
 export const transactionsApi = {
   async getTransactions(filters?: {
     search?: string;
@@ -66,399 +81,121 @@ export const transactionsApi = {
     dateTo?: string;
     type?: string;
     accountId?: string;
+    category?: string;
+    page?: number;
+    limit?: number;
   }): Promise<Transaction[]> {
-    await delay(400);
-    let transactions = [...mockTransactions];
-    
-    if (filters) {
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        transactions = transactions.filter(t => 
-          t.description.toLowerCase().includes(searchLower) ||
-          t.category?.toLowerCase().includes(searchLower) ||
-          t.subcategory?.toLowerCase().includes(searchLower) ||
-          t.reference?.toLowerCase().includes(searchLower)
-        );
-      }
-      if (filters.dateFrom) {
-        transactions = transactions.filter(t => t.date >= filters.dateFrom!);
-      }
-      if (filters.dateTo) {
-        transactions = transactions.filter(t => t.date <= filters.dateTo!);
-      }
-      if (filters.type && filters.type !== 'all') {
-        transactions = transactions.filter(t => t.type === filters.type);
-      }
-      if (filters.accountId && filters.accountId !== 'all') {
-        transactions = transactions.filter(t => t.accountId === filters.accountId);
-      }
-    }
-    
-    return transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const result = await realTransactionsApi.getTransactions(filters);
+    return result.transactions;
   },
 
-  async createTransaction(transaction: Omit<Transaction, 'id'>): Promise<Transaction> {
-    await delay(500);
-    const newTransaction: Transaction = {
-      ...transaction,
-      id: Date.now().toString()
-    };
-    mockTransactions.push(newTransaction);
-    
-    // Mise à jour du solde du compte
-    const account = mockAccounts.find(a => a.id === transaction.accountId);
-    if (account) {
-      if (transaction.type === 'recette') {
-        account.balance += transaction.amount;
-      } else {
-        account.balance -= transaction.amount;
-      }
-    }
-    
-    return newTransaction;
+  async createTransaction(transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>): Promise<Transaction> {
+    return await realTransactionsApi.createTransaction(transaction);
   },
 
   async updateTransaction(id: string, updates: Partial<Transaction>): Promise<Transaction> {
-    await delay(400);
-    const index = mockTransactions.findIndex(t => t.id === id);
-    if (index === -1) throw new Error('Transaction non trouvée');
-    
-    const oldTransaction = mockTransactions[index];
-    const updatedTransaction = { ...oldTransaction, ...updates };
-    mockTransactions[index] = updatedTransaction;
-    
-    return updatedTransaction;
+    return await realTransactionsApi.updateTransaction(id, updates);
   },
 
   async deleteTransaction(id: string): Promise<void> {
-    await delay(300);
-    const index = mockTransactions.findIndex(t => t.id === id);
-    if (index === -1) throw new Error('Transaction non trouvée');
-    
-    const transaction = mockTransactions[index];
-    
-    // Restaurer le solde du compte
-    const account = mockAccounts.find(a => a.id === transaction.accountId);
-    if (account) {
-      if (transaction.type === 'recette') {
-        account.balance -= transaction.amount;
-      } else {
-        account.balance += transaction.amount;
-      }
-    }
-    
-    mockTransactions.splice(index, 1);
+    await realTransactionsApi.deleteTransaction(id);
   }
 };
 
-// API des immobilisations
+// API des immobilisations - redirection vers l'API réelle
 export const immobilisationsApi = {
   async getImmobilisations(): Promise<Immobilisation[]> {
-    await delay(300);
-    return [...mockImmobilisations];
+    return await realImmobilisationsApi.getImmobilisations();
   },
 
-  async createImmobilisation(immobilisation: Omit<Immobilisation, 'id' | 'currentValue' | 'amortisationRate'>): Promise<Immobilisation> {
-    await delay(500);
-    const newImmobilisation: Immobilisation = {
-      ...immobilisation,
-      id: Date.now().toString(),
-      currentValue: immobilisation.purchaseAmount,
-      amortisationRate: 100 / immobilisation.duration
-    };
-    mockImmobilisations.push(newImmobilisation);
-    return newImmobilisation;
+  async createImmobilisation(immobilisation: Omit<Immobilisation, 'id' | 'currentValue' | 'amortisationRate' | 'createdAt' | 'updatedAt'>): Promise<Immobilisation> {
+    return await realImmobilisationsApi.createImmobilisation(immobilisation);
   },
 
   async updateImmobilisation(id: string, updates: Partial<Immobilisation>): Promise<Immobilisation> {
-    await delay(400);
-    const index = mockImmobilisations.findIndex(i => i.id === id);
-    if (index === -1) throw new Error('Immobilisation non trouvée');
-    
-    const updated = { ...mockImmobilisations[index], ...updates };
-    mockImmobilisations[index] = updated;
-    return updated;
+    return await realImmobilisationsApi.updateImmobilisation(id, updates);
   },
 
   async deleteImmobilisation(id: string): Promise<void> {
-    await delay(300);
-    const index = mockImmobilisations.findIndex(i => i.id === id);
-    if (index === -1) throw new Error('Immobilisation non trouvée');
-    mockImmobilisations.splice(index, 1);
+    await realImmobilisationsApi.deleteImmobilisation(id);
   }
 };
 
-// API des stocks
+// API des stocks - redirection vers l'API réelle
 export const stocksApi = {
   async getStocks(): Promise<Stock[]> {
-    await delay(300);
-    return [...mockStocks];
+    return await realStocksApi.getStocks();
   },
 
-  async createStock(stock: Omit<Stock, 'id' | 'totalValue'>): Promise<Stock> {
-    await delay(500);
-    const newStock: Stock = {
-      ...stock,
-      id: Date.now().toString(),
-      totalValue: stock.quantity * stock.unitPrice
-    };
-    mockStocks.push(newStock);
-    return newStock;
+  async createStock(stock: Omit<Stock, 'id' | 'totalValue' | 'createdAt' | 'updatedAt'>): Promise<Stock> {
+    return await realStocksApi.createStock(stock);
   },
 
   async updateStock(id: string, updates: Partial<Stock>): Promise<Stock> {
-    await delay(400);
-    const index = mockStocks.findIndex(s => s.id === id);
-    if (index === -1) throw new Error('Stock non trouvé');
-    
-    const updated = { ...mockStocks[index], ...updates };
-    if (updates.quantity !== undefined || updates.unitPrice !== undefined) {
-      updated.totalValue = updated.quantity * updated.unitPrice;
-    }
-    mockStocks[index] = updated;
-    return updated;
+    return await realStocksApi.updateStock(id, updates);
   },
 
   async deleteStock(id: string): Promise<void> {
-    await delay(300);
-    const index = mockStocks.findIndex(s => s.id === id);
-    if (index === -1) throw new Error('Stock non trouvé');
-    mockStocks.splice(index, 1);
+    await realStocksApi.deleteStock(id);
   }
 };
 
-// API des créances et dettes
+// API des créances et dettes - redirection vers l'API réelle
 export const creancesEtDettesApi = {
   async getCreancesEtDettes(): Promise<CreanceEtDette[]> {
-    await delay(300);
-    return [...mockCreancesEtDettes];
+    return await realCreancesEtDettesApi.getCreancesEtDettes();
   },
 
-  async createCreanceOuDette(item: Omit<CreanceEtDette, 'id'>): Promise<CreanceEtDette> {
-    await delay(500);
-    const newItem: CreanceEtDette = {
-      ...item,
-      id: Date.now().toString()
-    };
-    mockCreancesEtDettes.push(newItem);
-    return newItem;
+  async createCreanceOuDette(item: Omit<CreanceEtDette, 'id' | 'createdAt' | 'updatedAt'>): Promise<CreanceEtDette> {
+    return await realCreancesEtDettesApi.createCreanceOuDette(item);
   },
 
   async updateCreanceOuDette(id: string, updates: Partial<CreanceEtDette>): Promise<CreanceEtDette> {
-    await delay(400);
-    const index = mockCreancesEtDettes.findIndex(i => i.id === id);
-    if (index === -1) throw new Error('Élément non trouvé');
-    
-    const updated = { ...mockCreancesEtDettes[index], ...updates };
-    mockCreancesEtDettes[index] = updated;
-    return updated;
+    return await realCreancesEtDettesApi.updateCreanceOuDette(id, updates);
   },
 
   async deleteCreanceOuDette(id: string): Promise<void> {
-    await delay(300);
-    const index = mockCreancesEtDettes.findIndex(i => i.id === id);
-    if (index === -1) throw new Error('Élément non trouvé');
-    mockCreancesEtDettes.splice(index, 1);
+    await realCreancesEtDettesApi.deleteCreanceOuDette(id);
   }
 };
 
-// API des documents
+// API des documents - redirection vers l'API réelle
 export const documentsApi = {
   async getDocuments(transactionId?: string): Promise<Document[]> {
-    await delay(300);
-    let documents = [...mockDocuments];
-    if (transactionId) {
-      documents = documents.filter(d => d.transactionId === transactionId);
-    }
-    return documents;
+    return await realDocumentsApi.getDocuments(transactionId);
   },
 
   async uploadDocument(file: File, transactionId?: string): Promise<Document> {
-    await delay(1000); // Simulation upload
-    const newDocument: Document = {
-      id: Date.now().toString(),
-      name: file.name,
-      type: file.type,
-      size: file.size,
-      transactionId,
-      uploadDate: new Date().toISOString().split('T')[0],
-      url: `/documents/${file.name}`
-    };
-    mockDocuments.push(newDocument);
-    return newDocument;
+    return await realDocumentsApi.uploadDocument(file, transactionId);
   },
 
   async deleteDocument(id: string): Promise<void> {
-    await delay(300);
-    const index = mockDocuments.findIndex(d => d.id === id);
-    if (index === -1) throw new Error('Document non trouvé');
-    mockDocuments.splice(index, 1);
+    await realDocumentsApi.deleteDocument(id);
   }
 };
 
-// API des paramètres
+// API des paramètres - redirection vers l'API réelle
 export const settingsApi = {
   async getSettings(): Promise<SMTSettings> {
-    await delay(200);
-    return { ...mockSettings };
+    return await realSettingsApi.getSettings();
   },
 
   async updateSettings(updates: Partial<SMTSettings>): Promise<SMTSettings> {
-    await delay(400);
-    Object.assign(mockSettings, updates);
-    return { ...mockSettings };
+    return await realSettingsApi.updateSettings(updates);
   }
 };
 
-// API des rapports et statistiques
+// API des rapports et statistiques - redirection vers l'API réelle
 export const reportsApi = {
-  async getDashboardStats(): Promise<{
-    totalBalance: number;
-    monthlyRevenue: number;
-    monthlyExpenses: number;
-    netResult: number;
-    recentTransactions: Transaction[];
-    monthlyData: Array<{ month: string; recettes: number; depenses: number; }>;
-  }> {
-    await delay(500);
-    
-    const totalBalance = mockAccounts.reduce((sum, account) => sum + account.balance, 0);
-    
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
-    const currentMonthTransactions = mockTransactions.filter(t => {
-      const transactionDate = new Date(t.date);
-      return transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear;
-    });
-    
-    const monthlyRevenue = currentMonthTransactions
-      .filter(t => t.type === 'recette')
-      .reduce((sum, t) => sum + t.amount, 0);
-      
-    const monthlyExpenses = currentMonthTransactions
-      .filter(t => t.type === 'depense')
-      .reduce((sum, t) => sum + t.amount, 0);
-    
-    const netResult = monthlyRevenue - monthlyExpenses;
-    
-    const recentTransactions = mockTransactions
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 5);
-    
-    // Données des 6 derniers mois
-    const monthlyData: Array<{ month: string; recettes: number; depenses: number; }> = [];
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date();
-      date.setMonth(date.getMonth() - i);
-      const monthTransactions = mockTransactions.filter(t => {
-        const transactionDate = new Date(t.date);
-        return transactionDate.getMonth() === date.getMonth() && 
-               transactionDate.getFullYear() === date.getFullYear();
-      });
-      
-      monthlyData.push({
-        month: date.toLocaleDateString('fr', { month: 'short' }),
-        recettes: monthTransactions.filter(t => t.type === 'recette').reduce((sum, t) => sum + t.amount, 0),
-        depenses: monthTransactions.filter(t => t.type === 'depense').reduce((sum, t) => sum + t.amount, 0)
-      });
-    }
-    
-    return {
-      totalBalance,
-      monthlyRevenue,
-      monthlyExpenses,
-      netResult,
-      recentTransactions,
-      monthlyData
-    };
+  async getDashboardStats(): Promise<DashboardStats> {
+    return await realReportsApi.getDashboardStats();
   },
 
-  async getCompteResultat(dateFrom: string, dateTo: string): Promise<{
-    recettes: Array<{ category: string; amount: number; }>;
-    depenses: Array<{ category: string; amount: number; }>;
-    totalRecettes: number;
-    totalDepenses: number;
-    resultat: number;
-  }> {
-    await delay(600);
-    
-    const transactions = mockTransactions.filter(t => 
-      t.date >= dateFrom && t.date <= dateTo
-    );
-    
-    const recettesGrouped = transactions
-      .filter(t => t.type === 'recette')
-      .reduce((acc, t) => {
-        const category = t.category;
-        acc[category] = (acc[category] || 0) + t.amount;
-        return acc;
-      }, {} as Record<string, number>);
-    
-    const depensesGrouped = transactions
-      .filter(t => t.type === 'depense')
-      .reduce((acc, t) => {
-        const category = t.category;
-        acc[category] = (acc[category] || 0) + t.amount;
-        return acc;
-      }, {} as Record<string, number>);
-    
-    const recettes = Object.entries(recettesGrouped).map(([category, amount]) => ({ category, amount }));
-    const depenses = Object.entries(depensesGrouped).map(([category, amount]) => ({ category, amount }));
-    
-    const totalRecettes = recettes.reduce((sum, r) => sum + r.amount, 0);
-    const totalDepenses = depenses.reduce((sum, d) => sum + d.amount, 0);
-    const resultat = totalRecettes - totalDepenses;
-    
-    return {
-      recettes,
-      depenses,
-      totalRecettes,
-      totalDepenses,
-      resultat
-    };
+  async getCompteResultat(dateFrom: string, dateTo: string): Promise<CompteResultat> {
+    return await realReportsApi.getCompteResultat(dateFrom, dateTo);
   },
 
-  async getBilan(): Promise<{
-    actif: Array<{ category: string; amount: number; }>;
-    passif: Array<{ category: string; amount: number; }>;
-    totalActif: number;
-    totalPassif: number;
-  }> {
-    await delay(600);
-    
-    const totalTresorerie = mockAccounts.reduce((sum, account) => sum + account.balance, 0);
-    const totalImmobilisations = mockImmobilisations.reduce((sum, immo) => sum + immo.currentValue, 0);
-    const totalStocks = mockStocks.reduce((sum, stock) => sum + stock.totalValue, 0);
-    const totalCreances = mockCreancesEtDettes
-      .filter(item => item.type === 'creance')
-      .reduce((sum, item) => sum + item.amount, 0);
-    
-    const totalDettes = mockCreancesEtDettes
-      .filter(item => item.type === 'dette')
-      .reduce((sum, item) => sum + item.amount, 0);
-    
-    const capitalSocial = mockAccounts.find(a => a.type === 'capital')?.balance || 0;
-    
-    const actif = [
-      { category: 'Immobilisations', amount: totalImmobilisations },
-      { category: 'Stocks', amount: totalStocks },
-      { category: 'Créances', amount: totalCreances },
-      { category: 'Trésorerie', amount: totalTresorerie }
-    ];
-    
-    const passif = [
-      { category: 'Capital social', amount: capitalSocial },
-      { category: 'Dettes', amount: totalDettes }
-    ];
-    
-    const totalActif = actif.reduce((sum, a) => sum + a.amount, 0);
-    const totalPassif = passif.reduce((sum, p) => sum + p.amount, 0);
-    
-    return {
-      actif,
-      passif,
-      totalActif,
-      totalPassif
-    };
+  async getBilan(): Promise<Bilan> {
+    return await realReportsApi.getBilan();
   }
 };

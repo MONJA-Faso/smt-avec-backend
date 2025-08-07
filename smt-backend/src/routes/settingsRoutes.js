@@ -1,7 +1,5 @@
 const express = require('express');
 const {
-  getSettings,
-  updateSettings,
   getCompanyInfo,
   updateCompanyInfo,
   getAccountingSettings,
@@ -13,44 +11,37 @@ const {
   importSettings
 } = require('../controllers/settingsController');
 const { protect, restrictTo } = require('../middleware/auth');
-const { validateSettings, validateCompanyInfo, validateAccountingSettings } = require('../middleware/validation');
-const { upload } = require('../middleware/upload');
+const { validate, settingsValidation } = require('../middleware/validation');
+const { uploadConfigs } = require('../middleware/upload');
 
 const router = express.Router();
 
 // Toutes les routes nécessitent une authentification
 router.use(protect);
 
-// Routes principales
+// Routes principales - utiliser getCompanyInfo comme endpoint principal
 router.route('/')
-  .get(getSettings)
-  .put(restrictTo('admin', 'manager'), validateSettings, updateSettings);
+  .get(getCompanyInfo)
+  .put(restrictTo('admin', 'user'), validate(settingsValidation.company), updateCompanyInfo);
 
 // Informations de l'entreprise
 router.route('/company')
   .get(getCompanyInfo)
-  .put(restrictTo('admin', 'manager'), validateCompanyInfo, updateCompanyInfo);
+  .put(restrictTo('admin', 'user'), validate(settingsValidation.company), updateCompanyInfo);
 
 // Paramètres comptables
 router.route('/accounting')
   .get(getAccountingSettings)
-  .put(restrictTo('admin', 'manager'), validateAccountingSettings, updateAccountingSettings);
+  .put(restrictTo('admin', 'user'), validate(settingsValidation.accounting), updateAccountingSettings);
 
-// Paramètres système (admin seulement)
+// Paramètres système
 router.route('/system')
-  .get(restrictTo('admin'), getSystemSettings)
+  .get(getSystemSettings)
   .put(restrictTo('admin'), updateSystemSettings);
 
-// Actions spéciales (admin seulement)
+// Reset et import/export
 router.post('/reset', restrictTo('admin'), resetToDefaults);
-
-// Import/Export (admin seulement)
-router.post('/import', 
-  restrictTo('admin'), 
-  upload.single('file'), 
-  importSettings
-);
-
 router.get('/export', restrictTo('admin'), exportSettings);
+router.post('/import', restrictTo('admin'), uploadConfigs.documents.single('file'), importSettings);
 
 module.exports = router;

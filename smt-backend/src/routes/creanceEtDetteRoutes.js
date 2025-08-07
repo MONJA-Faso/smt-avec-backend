@@ -7,16 +7,10 @@ const {
   deleteCreanceEtDette,
   addPayment,
   getPaymentHistory,
-  getOverdueItems,
-  getCreancesByClient,
-  getDettesByFournisseur,
-  calculateInterests,
-  sendReminder,
-  exportCreancesEtDettes,
-  getAgeingReport
+  getOverdueItems
 } = require('../controllers/creanceEtDetteController');
 const { protect, restrictTo } = require('../middleware/auth');
-const { validateCreanceEtDette, validateCreanceEtDetteUpdate, validatePayment } = require('../middleware/validation');
+const { validate, creanceDetteValidation } = require('../middleware/validation');
 
 const router = express.Router();
 
@@ -26,31 +20,16 @@ router.use(protect);
 // Routes principales
 router.route('/')
   .get(getCreancesEtDettes)
-  .post(validateCreanceEtDette, createCreanceEtDette);
+  .post(validate(creanceDetteValidation.create), createCreanceEtDette);
 
 router.route('/:id')
   .get(getCreanceEtDette)
-  .put(validateCreanceEtDetteUpdate, updateCreanceEtDette)
-  .delete(restrictTo('admin', 'manager'), deleteCreanceEtDette);
+  .put(validate(creanceDetteValidation.update), updateCreanceEtDette)
+  .delete(restrictTo('admin', 'user'), deleteCreanceEtDette);
 
-// Gestion des paiements
-router.post('/:id/payments', validatePayment, addPayment);
+// Routes pour les paiements
+router.post('/:id/payments', addPayment);
 router.get('/:id/payments', getPaymentHistory);
-
-// Routes spécialisées
-router.get('/overdue/list', getOverdueItems);
-router.get('/client/:clientId', getCreancesByClient);
-router.get('/fournisseur/:fournisseurId', getDettesByFournisseur);
-router.get('/reports/ageing', getAgeingReport);
-
-// Actions
-router.post('/:id/calculate-interests', calculateInterests);
-router.post('/:id/send-reminder', 
-  restrictTo('admin', 'manager'), 
-  sendReminder
-);
-
-// Export
-router.get('/export', exportCreancesEtDettes);
+router.get('/overdue', getOverdueItems);
 
 module.exports = router;

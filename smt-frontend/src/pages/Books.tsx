@@ -63,11 +63,14 @@ export function Books() {
   };
 
   // Calculs pour le livre recettes-dépenses
-  const recettes = transactions.filter(t => t.type === 'recette');
-  const depenses = transactions.filter(t => t.type === 'depense');
+  const safeTransactions = transactions ?? [];
+
+  const recettes = safeTransactions.filter(t => t.type === 'recette');
+  const depenses = safeTransactions.filter(t => t.type === 'depense');
   const totalRecettes = recettes.reduce((sum, t) => sum + t.amount, 0);
   const totalDepenses = depenses.reduce((sum, t) => sum + t.amount, 0);
   const solde = totalRecettes - totalDepenses;
+
 
   if (loading) {
     return (
@@ -245,7 +248,7 @@ export function Books() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transactions.length === 0 ? (
+                {(transactions?.length ?? 0) === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                       Aucune transaction trouvée pour la période sélectionnée
@@ -320,7 +323,7 @@ export function Books() {
           </div>
 
           {/* Totaux */}
-          {transactions.length > 0 && (
+          {(transactions?.length ?? 0) > 0 && (
             <div className="mt-6 border-t pt-4">
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div className="text-center">

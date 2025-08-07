@@ -6,14 +6,14 @@ const {
   updateDocument,
   deleteDocument,
   downloadDocument,
-  getDocumentsByType,
-  getDocumentsByEntity,
+  getDocumentPreview,
   searchDocuments,
-  getDocumentPreview
+  getDocumentsByType,
+  getDocumentsByEntity
 } = require('../controllers/documentController');
 const { protect, restrictTo } = require('../middleware/auth');
-const { validateDocument, validateDocumentUpdate } = require('../middleware/validation');
-const { upload, uploadMultiple } = require('../middleware/upload');
+const { validate } = require('../middleware/validation');
+const { uploadConfigs } = require('../middleware/upload');
 
 const router = express.Router();
 
@@ -22,19 +22,20 @@ router.use(protect);
 
 // Routes principales
 router.route('/')
-  .get(getDocuments)
-  .post(upload.single('file'), validateDocument, uploadDocument);
+  .get(getDocuments);
+
+router.post('/upload', uploadConfigs.documents.single('file'), uploadDocument);
 
 // Upload multiple
 router.post('/upload-multiple', 
-  uploadMultiple.array('files', 10), 
+  uploadConfigs.documents.array('files', 10), 
   uploadDocument
 );
 
 router.route('/:id')
   .get(getDocument)
-  .put(validateDocumentUpdate, updateDocument)
-  .delete(restrictTo('admin', 'manager'), deleteDocument);
+  .put(updateDocument)
+  .delete(restrictTo('admin', 'user'), deleteDocument);
 
 // Routes spécialisées
 router.get('/:id/download', downloadDocument);

@@ -30,7 +30,8 @@ const accountSchema = new mongoose.Schema({
   accountNumber: {
     type: String,
     trim: true,
-    sparse: true // Permet d'avoir des valeurs null/undefined multiples
+    sparse: true // Autorise les doublons null/undefined
+    // ❌ PAS de index: true ici
   },
   bankName: {
     type: String,
@@ -59,7 +60,6 @@ const accountSchema = new mongoose.Schema({
   lastTransactionDate: {
     type: Date
   },
-  // Informations pour la réconciliation bancaire
   lastReconciliationDate: {
     type: Date
   },
@@ -72,11 +72,13 @@ const accountSchema = new mongoose.Schema({
   collection: 'accounts'
 });
 
-// Index pour améliorer les performances
+// ✅ Index conservé : utile et non dupliqué
 accountSchema.index({ type: 1, isActive: 1 });
+
+// ✅ Index sur accountNumber, mais défini uniquement ici (pas en double)
 accountSchema.index({ accountNumber: 1 }, { sparse: true });
 
-// Méthode virtuelle pour calculer le solde formaté
+// ✅ Méthode virtuelle
 accountSchema.virtual('formattedBalance').get(function() {
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
@@ -85,7 +87,7 @@ accountSchema.virtual('formattedBalance').get(function() {
   }).format(this.balance);
 });
 
-// Méthode pour mettre à jour le solde
+// ✅ Méthodes d'instance
 accountSchema.methods.updateBalance = function(amount, isCredit = true) {
   if (isCredit) {
     this.balance += amount;
@@ -96,7 +98,7 @@ accountSchema.methods.updateBalance = function(amount, isCredit = true) {
   return this.save();
 };
 
-// Méthode statique pour obtenir le total des soldes par type
+// ✅ Méthodes statiques
 accountSchema.statics.getTotalByType = function(type) {
   return this.aggregate([
     { $match: { type, isActive: true } },
@@ -104,32 +106,29 @@ accountSchema.statics.getTotalByType = function(type) {
   ]);
 };
 
-// Méthode statique pour obtenir le solde total de trésorerie
 accountSchema.statics.getTotalTreasury = function() {
   return this.aggregate([
-    { 
-      $match: { 
-        type: { $in: ['caisse', 'banque', 'ccp'] }, 
-        isActive: true 
-      } 
+    {
+      $match: {
+        type: { $in: ['caisse', 'banque', 'ccp'] },
+        isActive: true
+      }
     },
     { $group: { _id: null, total: { $sum: '$balance' } } }
   ]);
 };
 
-// Middleware pour valider les types de comptes spéciaux
+// ✅ Middleware avant sauvegarde
 accountSchema.pre('save', function(next) {
-  // Validation spécifique pour les comptes bancaires
   if (this.type === 'banque' && !this.accountNumber) {
-    next(new Error('Le numéro de compte est requis pour les comptes bancaires'));
+    return next(new Error('Le numéro de compte est requis pour les comptes bancaires'));
   }
-  
-  // Validation pour s'assurer qu'il n'y a qu'un seul compte capital actif
+
   if (this.type === 'capital' && this.isActive) {
-    this.constructor.findOne({ 
-      type: 'capital', 
-      isActive: true, 
-      _id: { $ne: this._id } 
+    this.constructor.findOne({
+      type: 'capital',
+      isActive: true,
+      _id: { $ne: this._id }
     })
     .then(existingCapital => {
       if (existingCapital) {
