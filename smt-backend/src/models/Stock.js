@@ -27,8 +27,8 @@ const stockSchema = new mongoose.Schema({
   },
   totalValue: {
     type: Number,
-    required: [true, 'La valeur totale est requise'],
     min: [0, 'La valeur totale ne peut pas être négative']
+    // Calculé automatiquement par le hook pre-save : quantity * unitPrice
   },
   date: {
     type: Date,

@@ -136,7 +136,11 @@ const immobilisationValidation = {
       address: Joi.string().max(300)
     }),
     location: Joi.string().max(200),
-    residualValue: Joi.number().min(0).default(0)
+    residualValue: Joi.number().min(0).default(0),
+    // Champs optionnels calculés automatiquement si non fournis
+    currentValue: Joi.number().min(0),
+    amortisationRate: Joi.number().min(0).max(100),
+    status: Joi.string().valid('en_service', 'hors_service', 'en_reparation', 'cede', 'detruit')
   }),
   
   update: Joi.object({
@@ -171,7 +175,9 @@ const stockValidation = {
     costPrice: Joi.number().min(0),
     sellingPrice: Joi.number().min(0),
     expiryDate: Joi.date(),
-    manufactureDate: Joi.date()
+    manufactureDate: Joi.date(),
+    // Champ calculé automatiquement si non fourni
+    totalValue: Joi.number().min(0)
   }),
   
   update: Joi.object({
@@ -219,7 +225,9 @@ const creanceDetteValidation = {
       industry: Joi.string().max(100)
     }),
     paymentTerms: Joi.string().max(200),
-    interestRate: Joi.number().min(0).max(100).default(0)
+    interestRate: Joi.number().min(0).max(100).default(0),
+    // Champ calculé automatiquement si non fourni
+    originalAmount: Joi.number().min(0)
   }),
   
   update: Joi.object({

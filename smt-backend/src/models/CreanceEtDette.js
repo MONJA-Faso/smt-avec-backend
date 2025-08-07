@@ -65,8 +65,8 @@ const creanceEtDetteSchema = new mongoose.Schema({
     maxlength: [50, 'La référence ne peut pas dépasser 50 caractères']
   },
   originalAmount: {
-    type: Number,
-    required: [true, 'Le montant original est requis']
+    type: Number
+    // Calculé automatiquement par le hook pre-save : égal à amount lors de la création
   },
   paidAmount: {
     type: Number,
