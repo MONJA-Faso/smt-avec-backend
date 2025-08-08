@@ -112,8 +112,8 @@ function TransactionForm({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="recette">Recette</SelectItem>
-              <SelectItem value="depense">Dépense</SelectItem>
+              <SelectItem key="recette" value="recette">Recette</SelectItem>
+              <SelectItem key="depense" value="depense">Dépense</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -151,7 +151,7 @@ function TransactionForm({
               <SelectValue placeholder="Sélectionner un compte" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tous</SelectItem>
+              <SelectItem key="all" value="all">Tous</SelectItem>
               {accounts && accounts.map((account) => (
                 <SelectItem key={account.id} value={account.id}>
                   {account.name}
@@ -460,9 +460,9 @@ export function Transactions() {
                 <SelectValue placeholder="Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tous</SelectItem>
-                <SelectItem value="recette">Recettes</SelectItem>
-                <SelectItem value="depense">Dépenses</SelectItem>
+                <SelectItem key="all" value="all">Tous</SelectItem>
+                <SelectItem key="recette" value="recette">Recettes</SelectItem>
+                <SelectItem key="depense" value="depense">Dépenses</SelectItem>
               </SelectContent>
             </Select>
 
@@ -474,8 +474,8 @@ export function Transactions() {
                 <SelectValue placeholder="Compte" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tous</SelectItem>
-                {accounts.map((account) => (
+                <SelectItem key="all" value="all">Tous</SelectItem>
+                {accounts && accounts.map((account) => (
                   <SelectItem key={account.id} value={account.id}>
                     {account.name}
                   </SelectItem>

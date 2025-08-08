@@ -92,7 +92,7 @@ function TransferForm({
             required
           >
             <option value="none">Sélectionner le compte source</option>
-            {accounts.map((account) => (
+            {accounts && accounts.map((account) => (
               <option key={account.id} value={account.id}>
                 {account.name} ({formatCurrency(account.balance)})
               </option>
@@ -110,7 +110,7 @@ function TransferForm({
             required
           >
             <option value="none">Sélectionner le compte destination</option>
-            {accounts
+            {accounts && accounts
               .filter(account => account.id !== formData.fromAccountId)
               .map((account) => (
                 <option key={account.id} value={account.id}>
@@ -249,7 +249,7 @@ export function Accounts() {
 
       {/* Cartes des comptes */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {accounts.map((account) => {
+        {accounts && accounts.map((account) => {
           const Icon = accountIcons[account.type as keyof typeof accountIcons];
           const colorClass = accountColors[account.type as keyof typeof accountColors];
           
@@ -291,7 +291,7 @@ export function Accounts() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {accounts.map((account) => {
+              {accounts && accounts.map((account) => {
                 const Icon = accountIcons[account.type as keyof typeof accountIcons];
                 
                 return (
