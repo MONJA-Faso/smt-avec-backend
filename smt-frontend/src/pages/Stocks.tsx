@@ -237,15 +237,13 @@ export function Stocks() {
                       <SelectValue placeholder="Catégorie" />
                     </SelectTrigger>
                     <SelectContent>
-<<<<<<< HEAD
-                          <SelectItem key="Marchandises" value="Marchandises">Marchandises</SelectItem>
-+                         <SelectItem key="Matieres" value="Matières premières">Matières premières</SelectItem>
-+                         <SelectItem key="Produits" value="Produits finis">Produits finis</SelectItem>
-+                         <SelectItem key="Fournitures" value="Fournitures">Fournitures</SelectItem>
-+                         <SelectItem key="Emballages" value="Emballages">Emballages</SelectItem>
-=======
-                      
->>>>>>> 97b9f652c95cd74d32ff27939755c82de47126a7
+
+                        <SelectItem key="Marchandises" value="Marchandises">Marchandises</SelectItem>                         
+                        <SelectItem key="Matieres" value="Matières premières">Matières premières</SelectItem>
+                        <SelectItem key="Produits" value="Produits finis">Produits finis</SelectItem>
+                        <SelectItem key="Fournitures" value="Fournitures">Fournitures</SelectItem>
+                        <SelectItem key="Emballages" value="Emballages">Emballages</SelectItem>
+
                     </SelectContent>
                   </Select>
                 </div>
@@ -373,11 +371,9 @@ export function Stocks() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-<<<<<<< HEAD
+
                     <SelectItem key="all" value="all">Toutes</SelectItem>
-=======
-                      
->>>>>>> 97b9f652c95cd74d32ff27939755c82de47126a7
+
                       {categories.map(cat => (
                           <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                          ))}

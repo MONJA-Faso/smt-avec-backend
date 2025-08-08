@@ -200,14 +200,11 @@ export function Books() {
                   <SelectValue placeholder="Tous" />
                 </SelectTrigger>
                 <SelectContent>
-<<<<<<< HEAD
-+                     <SelectItem key="all" value="all">Tous</SelectItem>
-+                     <SelectItem key="recette" value="recette">Recettes uniquement</SelectItem>
-+                     <SelectItem key="depense" value="depense">Dépenses uniquement</SelectItem>
-+               </SelectContent>
-=======
-                  
->>>>>>> 97b9f652c95cd74d32ff27939755c82de47126a7
+
+                     <SelectItem key="all" value="all">Tous</SelectItem>
+                     <SelectItem key="recette" value="recette">Recettes uniquement</SelectItem>
+                     <SelectItem key="depense" value="depense">Dépenses uniquement</SelectItem>
+               </SelectContent>
               </Select>
             </div>
             <div className="flex items-end">

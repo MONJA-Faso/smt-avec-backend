@@ -484,16 +484,14 @@ export function Immobilisations() {
                       <SelectValue placeholder="Sélectionner une catégorie" />
                     </SelectTrigger>
                     <SelectContent>
-<<<<<<< HEAD
- +                         
-=======
+
                       <SelectItem key="transport" value="Matériel de transport">Matériel de transport</SelectItem>
                       <SelectItem key="informatique" value="Matériel informatique">Matériel informatique</SelectItem>
                       <SelectItem key="industriel" value="Matériel industriel">Matériel industriel</SelectItem>
                       <SelectItem key="mobilier" value="Mobilier de bureau">Mobilier de bureau</SelectItem>
                       <SelectItem key="installations" value="Installations">Installations</SelectItem>
                     </SelectContent>
->>>>>>> 97b9f652c95cd74d32ff27939755c82de47126a7
+
                   </Select>
                 </div>
                 <div>
@@ -525,15 +523,12 @@ export function Immobilisations() {
                       <SelectValue placeholder="Sélectionner la durée" />
                     </SelectTrigger>
                     <SelectContent>
-<<<<<<< HEAD
- +                         
-=======
                       <SelectItem key="3" value="3">3 ans (Informatique)</SelectItem>
                       <SelectItem key="5" value="5">5 ans (Véhicules, mobilier)</SelectItem>
                       <SelectItem key="10" value="10">10 ans (Matériel industriel)</SelectItem>
                       <SelectItem key="20" value="20">20 ans (Bâtiments)</SelectItem>
                     </SelectContent>
->>>>>>> 97b9f652c95cd74d32ff27939755c82de47126a7
+
                   </Select>
                 </div>
                 <Button 
@@ -615,15 +610,12 @@ export function Immobilisations() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-<<<<<<< HEAD
- +                     
-=======
                   <SelectItem key="all" value="all">Toutes</SelectItem>
                   <SelectItem key="active" value="active">Actives</SelectItem>
                   <SelectItem key="cedee" value="cedee">Cédées</SelectItem>
                   <SelectItem key="obsolete" value="obsolete">Obsolètes</SelectItem>
                 </SelectContent>
->>>>>>> 97b9f652c95cd74d32ff27939755c82de47126a7
+
               </Select>
             </div>
             <div>
@@ -633,15 +625,13 @@ export function Immobilisations() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-<<<<<<< HEAD
-                    
-=======
+
                   <SelectItem key="all" value="all">Toutes</SelectItem>
                   {categories.map(cat => (
                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                   ))}
                 </SelectContent>
->>>>>>> 97b9f652c95cd74d32ff27939755c82de47126a7
+
               </Select>
             </div>
           </div>
