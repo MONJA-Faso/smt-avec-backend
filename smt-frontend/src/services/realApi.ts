@@ -242,6 +242,39 @@ export const accountsApi = {
     if (!response.data.success) {
       throw new Error('Erreur lors de la suppression du compte');
     }
+  },
+
+  async transferBetweenAccounts(transferData: {
+    fromAccountId: string;
+    toAccountId: string;
+    amount: number;
+    description?: string;
+  }): Promise<{
+    reference: string;
+    amount: number;
+    description?: string;
+    fromAccount: { id: string; name: string; newBalance: number };
+    toAccount: { id: string; name: string; newBalance: number };
+    date: string;
+  }> {
+    const response: AxiosResponse<{ 
+      success: boolean; 
+      data: { 
+        transfer: {
+          reference: string;
+          amount: number;
+          description?: string;
+          fromAccount: { id: string; name: string; newBalance: number };
+          toAccount: { id: string; name: string; newBalance: number };
+          date: string;
+        }
+      } 
+    }> = await apiClient.post('/accounts/transfer', transferData);
+    
+    if (response.data.success) {
+      return response.data.data.transfer;
+    }
+    throw new Error('Erreur lors du virement');
   }
 };
 

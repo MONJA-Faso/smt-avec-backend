@@ -26,22 +26,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { exportToPDF } from '@/utils/exportUtils';
-
-interface Stock {
-  id: string;
-  designation: string;
-  categorie: string;
-  unite: string;
-  stockInitial: number;
-  prixUnitaireInitial: number;
-  valeurInitiale: number;
-  stockFinal: number;
-  prixUnitaireFinal: number;
-  valeurFinale: number;
-  variation: number;
-  dateInventaire: string;
-  exercice: string;
-}
+import { useStocks } from '@/hooks/useSMT';
+import { Stock } from '@/types';
 
 interface InventaireStock {
   exercice: string;
@@ -54,7 +40,7 @@ interface InventaireStock {
   variation: number;
 }
 
-// Mock data
+// Mock data pour les inventaires (à remplacer plus tard par API)
 const mockInventaires: InventaireStock[] = [
   {
     exercice: '2024',
@@ -78,69 +64,6 @@ const mockInventaires: InventaireStock[] = [
   }
 ];
 
-const mockStocks: Stock[] = [
-  {
-    id: '1',
-    designation: 'Marchandises - Article A',
-    categorie: 'Marchandises',
-    unite: 'Pièces',
-    stockInitial: 100,
-    prixUnitaireInitial: 50000,
-    valeurInitiale: 5000000,
-    stockFinal: 150,
-    prixUnitaireFinal: 55000,
-    valeurFinale: 8250000,
-    variation: 3250000,
-    dateInventaire: '2024-12-31',
-    exercice: '2024'
-  },
-  {
-    id: '2',
-    designation: 'Matières premières - Type B',
-    categorie: 'Matières premières',
-    unite: 'Kg',
-    stockInitial: 500,
-    prixUnitaireInitial: 8000,
-    valeurInitiale: 4000000,
-    stockFinal: 450,
-    prixUnitaireFinal: 9000,
-    valeurFinale: 4050000,
-    variation: 50000,
-    dateInventaire: '2024-12-31',
-    exercice: '2024'
-  },
-  {
-    id: '3',
-    designation: 'Produits finis - Modèle C',
-    categorie: 'Produits finis',
-    unite: 'Unités',
-    stockInitial: 75,
-    prixUnitaireInitial: 80000,
-    valeurInitiale: 6000000,
-    stockFinal: 90,
-    prixUnitaireFinal: 85000,
-    valeurFinale: 7650000,
-    variation: 1650000,
-    dateInventaire: '2024-12-31',
-    exercice: '2024'
-  },
-  {
-    id: '4',
-    designation: 'Fournitures - Type D',
-    categorie: 'Fournitures',
-    unite: 'Lots',
-    stockInitial: 25,
-    prixUnitaireInitial: 20000,
-    valeurInitiale: 500000,
-    stockFinal: 15,
-    prixUnitaireFinal: 22000,
-    valeurFinale: 330000,
-    variation: -170000,
-    dateInventaire: '2024-12-31',
-    exercice: '2024'
-  }
-];
-
 // Formatage des montants
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('fr-FR', {
@@ -151,67 +74,63 @@ function formatCurrency(amount: number): string {
 }
 
 export function Stocks() {
-  const [stocks, setStocks] = useState<Stock[]>(mockStocks);
+  const { stocks, loading, error, createStock, updateStock, deleteStock } = useStocks();
   const [inventaires, setInventaires] = useState<InventaireStock[]>(mockInventaires);
   const [selectedExercice, setSelectedExercice] = useState('2024');
-  const [filteredStocks, setFilteredStocks] = useState<Stock[]>(mockStocks);
+  const [filteredStocks, setFilteredStocks] = useState<Stock[]>([]);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [newStock, setNewStock] = useState({
-    designation: '',
-    categorie: '',
-    unite: '',
-    stockInitial: '',
-    prixUnitaireInitial: '',
-    stockFinal: '',
-    prixUnitaireFinal: ''
+    name: '',
+    category: '',
+    unit: '',
+    quantity: '',
+    unitPrice: '',
+    supplier: ''
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('stocks');
 
   // Filtrage
   useEffect(() => {
-    let filtered = stocks.filter(stock => stock.exercice === selectedExercice);
+    let filtered = stocks || [];
     
     if (categoryFilter !== 'all') {
-      filtered = filtered.filter(stock => stock.categorie === categoryFilter);
+      filtered = filtered.filter(stock => stock.category === categoryFilter);
     }
     
     setFilteredStocks(filtered);
   }, [stocks, selectedExercice, categoryFilter]);
 
   // Ajout d'un nouveau stock
-  const handleAddStock = () => {
-    const valeurInitiale = parseFloat(newStock.stockInitial) * parseFloat(newStock.prixUnitaireInitial);
-    const valeurFinale = parseFloat(newStock.stockFinal) * parseFloat(newStock.prixUnitaireFinal);
-    const variation = valeurFinale - valeurInitiale;
-    
-    const nouveauStock: Stock = {
-      id: (stocks.length + 1).toString(),
-      designation: newStock.designation,
-      categorie: newStock.categorie,
-      unite: newStock.unite,
-      stockInitial: parseFloat(newStock.stockInitial),
-      prixUnitaireInitial: parseFloat(newStock.prixUnitaireInitial),
-      valeurInitiale: valeurInitiale,
-      stockFinal: parseFloat(newStock.stockFinal),
-      prixUnitaireFinal: parseFloat(newStock.prixUnitaireFinal),
-      valeurFinale: valeurFinale,
-      variation: variation,
-      dateInventaire: new Date().toISOString().split('T')[0],
-      exercice: selectedExercice
-    };
+  const handleAddStock = async () => {
+    try {
+      const quantity = parseFloat(newStock.quantity) || 0;
+      const unitPrice = parseFloat(newStock.unitPrice) || 0;
+      
+      const stockData = {
+        name: newStock.name,
+        category: newStock.category,
+        quantity: quantity,
+        unitPrice: unitPrice,
+        unit: newStock.unit,
+        supplier: newStock.supplier || 'Fournisseur par défaut'
+      };
 
-    setStocks([...stocks, nouveauStock]);
-    setNewStock({
-      designation: '',
-      categorie: '',
-      unite: '',
-      stockInitial: '',
-      prixUnitaireInitial: '',
-      stockFinal: '',
-      prixUnitaireFinal: ''
-    });
-    setIsDialogOpen(false);
+      await createStock(stockData);
+      
+      setNewStock({
+        name: '',
+        category: '',
+        unit: '',
+        quantity: '',
+        unitPrice: '',
+        supplier: ''
+      });
+      setIsDialogOpen(false);
+    } catch (err) {
+      console.error('Erreur lors de la création du stock:', err);
+      alert('Erreur lors de la création du stock');
+    }
   };
 
   // Export PDF
@@ -228,14 +147,27 @@ export function Stocks() {
 
   // Statistiques
   const inventaireActuel = inventaires.find(inv => inv.exercice === selectedExercice);
-  const totalValeurInitiale = filteredStocks.reduce((sum, stock) => sum + stock.valeurInitiale, 0);
-  const totalValeurFinale = filteredStocks.reduce((sum, stock) => sum + stock.valeurFinale, 0);
-  const totalVariation = filteredStocks.reduce((sum, stock) => sum + stock.variation, 0);
-  const categories = [...new Set(stocks.map(stock => stock.categorie))];
+  const totalValeurInitiale = filteredStocks.reduce((sum, stock) => sum + (stock.totalValue || 0), 0);
+  const totalValeurFinale = filteredStocks.reduce((sum, stock) => sum + (stock.totalValue || 0), 0);
+  const totalVariation = 0; // Pour l'instant, pas de variation car pas d'historique
+  const categories = [...new Set((stocks || []).map(stock => stock.category))];
   
-  const stocksEnHausse = filteredStocks.filter(s => s.variation > 0).length;
-  const stocksEnBaisse = filteredStocks.filter(s => s.variation < 0).length;
-  const stocksStables = filteredStocks.filter(s => s.variation === 0).length;
+  const stocksEnHausse = filteredStocks.filter(s => s.quantity > 50).length; // Simulation: stock > 50
+  const stocksEnBaisse = filteredStocks.filter(s => s.quantity < 20).length; // Simulation: stock < 20
+  const stocksStables = filteredStocks.filter(s => s.quantity >= 20 && s.quantity <= 50).length; // Simulation: stock entre 20 et 50
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 bg-gray-200 rounded animate-pulse" />
+        <div className="grid gap-4 md:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-24 bg-gray-200 rounded animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -246,6 +178,9 @@ export function Stocks() {
           <p className="mt-2 text-gray-600">
             Inventaire et variations de stocks (impact sur le résultat SMT)
           </p>
+          {error && (
+            <p className="mt-2 text-red-600">Erreur: {error}</p>
+          )}
         </div>
         <div className="flex gap-2 mt-4 sm:mt-0">
           <Select value={selectedExercice} onValueChange={setSelectedExercice}>
@@ -287,17 +222,17 @@ export function Stocks() {
               </DialogHeader>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="designation">Désignation</Label>
+                  <Label htmlFor="name">Désignation</Label>
                   <Input
-                    id="designation"
-                    value={newStock.designation}
-                    onChange={(e) => setNewStock({...newStock, designation: e.target.value})}
+                    id="name"
+                    value={newStock.name}
+                    onChange={(e) => setNewStock({...newStock, name: e.target.value})}
                     placeholder="Ex: Marchandises A"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="categorie">Catégorie</Label>
-                  <Select onValueChange={(value) => setNewStock({...newStock, categorie: value})}>
+                  <Label htmlFor="category">Catégorie</Label>
+                  <Select onValueChange={(value) => setNewStock({...newStock, category: value})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Catégorie" />
                     </SelectTrigger>
@@ -311,68 +246,46 @@ export function Stocks() {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="unite">Unité</Label>
+                  <Label htmlFor="unit">Unité</Label>
                   <Input
-                    id="unite"
-                    value={newStock.unite}
-                    onChange={(e) => setNewStock({...newStock, unite: e.target.value})}
+                    id="unit"
+                    value={newStock.unit}
+                    onChange={(e) => setNewStock({...newStock, unit: e.target.value})}
                     placeholder="Ex: Pièces, Kg, Litres"
                   />
                 </div>
-                <div></div>
-                <div className="col-span-2">
-                  <h4 className="font-medium mb-2">Stock initial (début d'exercice)</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="stockInitial">Quantité</Label>
-                      <Input
-                        id="stockInitial"
-                        type="number"
-                        value={newStock.stockInitial}
-                        onChange={(e) => setNewStock({...newStock, stockInitial: e.target.value})}
-                        placeholder="0"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="prixUnitaireInitial">Prix unitaire (MGA)</Label>
-                      <Input
-                        id="prixUnitaireInitial"
-                        type="number"
-                        value={newStock.prixUnitaireInitial}
-                        onChange={(e) => setNewStock({...newStock, prixUnitaireInitial: e.target.value})}
-                        placeholder="0"
-                      />
-                    </div>
-                  </div>
+                <div>
+                  <Label htmlFor="supplier">Fournisseur</Label>
+                  <Input
+                    id="supplier"
+                    value={newStock.supplier}
+                    onChange={(e) => setNewStock({...newStock, supplier: e.target.value})}
+                    placeholder="Nom du fournisseur"
+                  />
                 </div>
-                <div className="col-span-2">
-                  <h4 className="font-medium mb-2">Stock final (fin d'exercice)</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="stockFinal">Quantité</Label>
-                      <Input
-                        id="stockFinal"
-                        type="number"
-                        value={newStock.stockFinal}
-                        onChange={(e) => setNewStock({...newStock, stockFinal: e.target.value})}
-                        placeholder="0"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="prixUnitaireFinal">Prix unitaire (MGA)</Label>
-                      <Input
-                        id="prixUnitaireFinal"
-                        type="number"
-                        value={newStock.prixUnitaireFinal}
-                        onChange={(e) => setNewStock({...newStock, prixUnitaireFinal: e.target.value})}
-                        placeholder="0"
-                      />
-                    </div>
-                  </div>
+                <div>
+                  <Label htmlFor="quantity">Quantité</Label>
+                  <Input
+                    id="quantity"
+                    type="number"
+                    value={newStock.quantity}
+                    onChange={(e) => setNewStock({...newStock, quantity: e.target.value})}
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="unitPrice">Prix unitaire (MGA)</Label>
+                  <Input
+                    id="unitPrice"
+                    type="number"
+                    value={newStock.unitPrice}
+                    onChange={(e) => setNewStock({...newStock, unitPrice: e.target.value})}
+                    placeholder="0"
+                  />
                 </div>
                 <div className="col-span-2">
                   <Button onClick={handleAddStock} className="w-full">
-                    Ajouter
+                    Ajouter l'article
                   </Button>
                 </div>
               </div>
@@ -486,45 +399,30 @@ export function Stocks() {
                       <TableHead>Désignation</TableHead>
                       <TableHead>Catégorie</TableHead>
                       <TableHead>Unité</TableHead>
-                      <TableHead className="text-center">Qty Initial</TableHead>
-                      <TableHead className="text-right">Prix Unit. Init.</TableHead>
-                      <TableHead className="text-right">Valeur Init.</TableHead>
-                      <TableHead className="text-center">Qty Final</TableHead>
-                      <TableHead className="text-right">Prix Unit. Final</TableHead>
-                      <TableHead className="text-right">Valeur Finale</TableHead>
-                      <TableHead className="text-right">Variation</TableHead>
+                      <TableHead className="text-center">Quantité</TableHead>
+                      <TableHead className="text-right">Prix unitaire</TableHead>
+                      <TableHead className="text-right">Valeur totale</TableHead>
+                      <TableHead>Fournisseur</TableHead>
+                      <TableHead>Date</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredStocks.map((stock) => (
                       <TableRow key={stock.id}>
-                        <TableCell className="font-medium">{stock.designation}</TableCell>
-                        <TableCell>{stock.categorie}</TableCell>
-                        <TableCell>{stock.unite}</TableCell>
-                        <TableCell className="text-center">{stock.stockInitial}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(stock.prixUnitaireInitial)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(stock.valeurInitiale)}</TableCell>
-                        <TableCell className="text-center">{stock.stockFinal}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(stock.prixUnitaireFinal)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(stock.valeurFinale)}</TableCell>
-                        <TableCell className={`text-right font-medium ${
-                          stock.variation >= 0 ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {stock.variation >= 0 ? '+' : ''}{formatCurrency(stock.variation)}
-                        </TableCell>
+                        <TableCell className="font-medium">{stock.name}</TableCell>
+                        <TableCell>{stock.category}</TableCell>
+                        <TableCell>{stock.unit || 'Pièces'}</TableCell>
+                        <TableCell className="text-center">{stock.quantity}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(stock.unitPrice)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(stock.totalValue)}</TableCell>
+                        <TableCell>{stock.supplier || '-'}</TableCell>
+                        <TableCell>{stock.date ? new Date(stock.date).toLocaleDateString('fr-FR') : '-'}</TableCell>
                       </TableRow>
                     ))}
                     <TableRow className="border-t-2 font-bold">
                       <TableCell colSpan={5}>TOTAUX</TableCell>
-                      <TableCell className="text-right">{formatCurrency(totalValeurInitiale)}</TableCell>
-                      <TableCell></TableCell>
-                      <TableCell></TableCell>
                       <TableCell className="text-right">{formatCurrency(totalValeurFinale)}</TableCell>
-                      <TableCell className={`text-right ${
-                        totalVariation >= 0 ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {totalVariation >= 0 ? '+' : ''}{formatCurrency(totalVariation)}
-                      </TableCell>
+                      <TableCell colSpan={2}></TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
@@ -588,24 +486,20 @@ export function Stocks() {
                     </TableHeader>
                     <TableBody>
                       {categories.map(categorie => {
-                        const stocksCategorie = filteredStocks.filter(s => s.categorie === categorie);
-                        const initiale = stocksCategorie.reduce((sum, s) => sum + s.valeurInitiale, 0);
-                        const finale = stocksCategorie.reduce((sum, s) => sum + s.valeurFinale, 0);
-                        const variation = finale - initiale;
+                        const stocksCategorie = filteredStocks.filter(s => s.category === categorie);
+                        const valeurTotale = stocksCategorie.reduce((sum, s) => sum + s.totalValue, 0);
                         
                         return (
                           <TableRow key={categorie}>
                             <TableCell className="font-medium">{categorie}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(initiale)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(finale)}</TableCell>
-                            <TableCell className={`text-right font-medium ${
-                              variation >= 0 ? 'text-green-600' : 'text-red-600'
-                            }`}>
-                              {variation >= 0 ? '+' : ''}{formatCurrency(variation)}
+                            <TableCell className="text-right">{formatCurrency(valeurTotale)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(valeurTotale)}</TableCell>
+                            <TableCell className="text-right font-medium text-gray-600">
+                              {formatCurrency(0)}
                             </TableCell>
                             <TableCell className="text-center">
-                              <Badge variant={variation >= 0 ? 'default' : 'destructive'}>
-                                {variation >= 0 ? 'Positif' : 'Négatif'}
+                              <Badge variant="secondary">
+                                Stable
                               </Badge>
                             </TableCell>
                           </TableRow>

@@ -70,6 +70,22 @@ export const accountsApi = {
 
   async deleteAccount(id: string): Promise<void> {
     await realAccountsApi.deleteAccount(id);
+  },
+
+  async transferBetweenAccounts(transferData: {
+    fromAccountId: string;
+    toAccountId: string;
+    amount: number;
+    description?: string;
+  }): Promise<{
+    reference: string;
+    amount: number;
+    description?: string;
+    fromAccount: { id: string; name: string; newBalance: number };
+    toAccount: { id: string; name: string; newBalance: number };
+    date: string;
+  }> {
+    return await realAccountsApi.transferBetweenAccounts(transferData);
   }
 };
 

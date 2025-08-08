@@ -28,145 +28,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { exportToPDF } from '@/utils/exportUtils';
-
-interface Creance {
-  id: string;
-  clientNom: string;
-  facture: string;
-  dateFacture: string;
-  dateEcheance: string;
-  montant: number;
-  montantPaye: number;
-  montantRestant: number;
-  statut: 'en_cours' | 'echu' | 'paye' | 'litigieux';
-  description: string;
-  exercice: string;
-}
-
-interface Dette {
-  id: string;
-  fournisseurNom: string;
-  facture: string;
-  dateFacture: string;
-  dateEcheance: string;
-  montant: number;
-  montantPaye: number;
-  montantRestant: number;
-  statut: 'en_cours' | 'echu' | 'paye' | 'litigieux';
-  description: string;
-  exercice: string;
-}
-
-// Mock data
-const mockCreances: Creance[] = [
-  {
-    id: '1',
-    clientNom: 'SARL TECH SOLUTIONS',
-    facture: 'F-2024-001',
-    dateFacture: '2024-11-15',
-    dateEcheance: '2024-12-15',
-    montant: 2500000,
-    montantPaye: 1000000,
-    montantRestant: 1500000,
-    statut: 'en_cours',
-    description: 'Prestation services informatiques',
-    exercice: '2024'
-  },
-  {
-    id: '2',
-    clientNom: 'ENTREPRISE MAMADOU & FILS',
-    facture: 'F-2024-002',
-    dateFacture: '2024-10-20',
-    dateEcheance: '2024-11-20',
-    montant: 1800000,
-    montantPaye: 0,
-    montantRestant: 1800000,
-    statut: 'echu',
-    description: 'Vente marchandises',
-    exercice: '2024'
-  },
-  {
-    id: '3',
-    clientNom: 'COOPERATIVE AGRICOLE',
-    facture: 'F-2024-003',
-    dateFacture: '2024-12-01',
-    dateEcheance: '2025-01-01',
-    montant: 3200000,
-    montantPaye: 3200000,
-    montantRestant: 0,
-    statut: 'paye',
-    description: 'Fourniture équipements',
-    exercice: '2024'
-  },
-  {
-    id: '4',
-    clientNom: 'SOCIETE IMPORT-EXPORT',
-    facture: 'F-2024-004',
-    dateFacture: '2024-09-10',
-    dateEcheance: '2024-10-10',
-    montant: 4500000,
-    montantPaye: 2000000,
-    montantRestant: 2500000,
-    statut: 'litigieux',
-    description: 'Livraison produits - litige qualité',
-    exercice: '2024'
-  }
-];
-
-const mockDettes: Dette[] = [
-  {
-    id: '1',
-    fournisseurNom: 'FOURNISSEUR ABC',
-    facture: 'FA-2024-101',
-    dateFacture: '2024-11-20',
-    dateEcheance: '2024-12-20',
-    montant: 1200000,
-    montantPaye: 0,
-    montantRestant: 1200000,
-    statut: 'en_cours',
-    description: 'Achat matières premières',
-    exercice: '2024'
-  },
-  {
-    id: '2',
-    fournisseurNom: 'ELECTRICITE NATIONALE',
-    facture: 'ELE-2024-11',
-    dateFacture: '2024-11-30',
-    dateEcheance: '2024-12-30',
-    montant: 850000,
-    montantPaye: 850000,
-    montantRestant: 0,
-    statut: 'paye',
-    description: 'Facture d’électricité novembre',
-    exercice: '2024'
-  },
-  {
-    id: '3',
-    fournisseurNom: 'GARAGE MODERNE',
-    facture: 'GM-2024-055',
-    dateFacture: '2024-10-15',
-    dateEcheance: '2024-11-15',
-    montant: 650000,
-    montantPaye: 200000,
-    montantRestant: 450000,
-    statut: 'echu',
-    description: 'Réparation véhicule',
-    exercice: '2024'
-  },
-  {
-    id: '4',
-    fournisseurNom: 'BUREAU COMPTABLE EXPERT',
-    facture: 'BCE-2024-Q4',
-    dateFacture: '2024-12-01',
-    dateEcheance: '2025-01-31',
-    montant: 500000,
-    montantPaye: 0,
-    montantRestant: 500000,
-    statut: 'en_cours',
-    description: 'Honoraires expertise comptable Q4',
-    exercice: '2024'
-  }
-];
+import { useCreancesEtDettes } from '@/hooks/useSMT';
+import { CreanceEtDette } from '@/types';
 
 // Formatage des montants
 function formatCurrency(amount: number): string {
@@ -178,28 +41,23 @@ function formatCurrency(amount: number): string {
 }
 
 export function DebtsCredits() {
-  const [creances, setCreances] = useState<Creance[]>(mockCreances);
-  const [dettes, setDettes] = useState<Dette[]>(mockDettes);
+  const { creancesEtDettes, loading, error, createCreanceOuDette } = useCreancesEtDettes();
   const [selectedExercice, setSelectedExercice] = useState('2024');
-  const [filteredCreances, setFilteredCreances] = useState<Creance[]>(mockCreances);
-  const [filteredDettes, setFilteredDettes] = useState<Dette[]>(mockDettes);
+  const [filteredCreances, setFilteredCreances] = useState<CreanceEtDette[]>([]);
+  const [filteredDettes, setFilteredDettes] = useState<CreanceEtDette[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [newCreance, setNewCreance] = useState({
-    clientNom: '',
-    facture: '',
-    dateFacture: '',
-    dateEcheance: '',
-    montant: '',
-    montantPaye: '',
+    name: '',
+    thirdParty: '',
+    amount: '',
+    dueDate: '',
     description: ''
   });
   const [newDette, setNewDette] = useState({
-    fournisseurNom: '',
-    facture: '',
-    dateFacture: '',
-    dateEcheance: '',
-    montant: '',
-    montantPaye: '',
+    name: '',
+    thirdParty: '',
+    amount: '',
+    dueDate: '',
     description: ''
   });
   const [isCreanceDialogOpen, setIsCreanceDialogOpen] = useState(false);
@@ -207,84 +65,78 @@ export function DebtsCredits() {
 
   // Filtrage
   useEffect(() => {
-    let filteredC = creances.filter(c => c.exercice === selectedExercice);
-    let filteredD = dettes.filter(d => d.exercice === selectedExercice);
+    let filteredC = (creancesEtDettes || []).filter(c => c.type === 'creance');
+    let filteredD = (creancesEtDettes || []).filter(d => d.type === 'dette');
     
     if (statusFilter !== 'all') {
-      filteredC = filteredC.filter(c => c.statut === statusFilter);
-      filteredD = filteredD.filter(d => d.statut === statusFilter);
+      filteredC = filteredC.filter(c => c.status === statusFilter);
+      filteredD = filteredD.filter(d => d.status === statusFilter);
     }
     
     setFilteredCreances(filteredC);
     setFilteredDettes(filteredD);
-  }, [creances, dettes, selectedExercice, statusFilter]);
+  }, [creancesEtDettes, selectedExercice, statusFilter]);
 
   // Ajout d'une nouvelle créance
-  const handleAddCreance = () => {
-    const montant = parseFloat(newCreance.montant);
-    const montantPaye = parseFloat(newCreance.montantPaye || '0');
-    const montantRestant = montant - montantPaye;
-    
-    const nouvelleCreance: Creance = {
-      id: (creances.length + 1).toString(),
-      clientNom: newCreance.clientNom,
-      facture: newCreance.facture,
-      dateFacture: newCreance.dateFacture,
-      dateEcheance: newCreance.dateEcheance,
-      montant: montant,
-      montantPaye: montantPaye,
-      montantRestant: montantRestant,
-      statut: montantRestant === 0 ? 'paye' : 
-               new Date(newCreance.dateEcheance) < new Date() ? 'echu' : 'en_cours',
-      description: newCreance.description,
-      exercice: selectedExercice
-    };
+  const handleAddCreance = async () => {
+    try {
+      const amount = parseFloat(newCreance.amount);
+      
+      const creanceData = {
+        type: 'creance' as const,
+        name: newCreance.name,
+        amount: amount,
+        thirdParty: newCreance.thirdParty,
+        dueDate: newCreance.dueDate,
+        status: new Date(newCreance.dueDate) < new Date() ? 'echu' : 'en_cours',
+        description: newCreance.description
+      };
 
-    setCreances([...creances, nouvelleCreance]);
-    setNewCreance({
-      clientNom: '',
-      facture: '',
-      dateFacture: '',
-      dateEcheance: '',
-      montant: '',
-      montantPaye: '',
-      description: ''
-    });
-    setIsCreanceDialogOpen(false);
+      await createCreanceOuDette(creanceData);
+      
+      setNewCreance({
+        name: '',
+        thirdParty: '',
+        amount: '',
+        dueDate: '',
+        description: ''
+      });
+      setIsCreanceDialogOpen(false);
+    } catch (err) {
+      console.error('Erreur lors de la création de la créance:', err);
+      alert('Erreur lors de la création de la créance');
+    }
   };
 
   // Ajout d'une nouvelle dette
-  const handleAddDette = () => {
-    const montant = parseFloat(newDette.montant);
-    const montantPaye = parseFloat(newDette.montantPaye || '0');
-    const montantRestant = montant - montantPaye;
-    
-    const nouvelleDette: Dette = {
-      id: (dettes.length + 1).toString(),
-      fournisseurNom: newDette.fournisseurNom,
-      facture: newDette.facture,
-      dateFacture: newDette.dateFacture,
-      dateEcheance: newDette.dateEcheance,
-      montant: montant,
-      montantPaye: montantPaye,
-      montantRestant: montantRestant,
-      statut: montantRestant === 0 ? 'paye' : 
-               new Date(newDette.dateEcheance) < new Date() ? 'echu' : 'en_cours',
-      description: newDette.description,
-      exercice: selectedExercice
-    };
+  const handleAddDette = async () => {
+    try {
+      const amount = parseFloat(newDette.amount);
+      
+      const detteData = {
+        type: 'dette' as const,
+        name: newDette.name,
+        amount: amount,
+        thirdParty: newDette.thirdParty,
+        dueDate: newDette.dueDate,
+        status: new Date(newDette.dueDate) < new Date() ? 'echu' : 'en_cours',
+        description: newDette.description
+      };
 
-    setDettes([...dettes, nouvelleDette]);
-    setNewDette({
-      fournisseurNom: '',
-      facture: '',
-      dateFacture: '',
-      dateEcheance: '',
-      montant: '',
-      montantPaye: '',
-      description: ''
-    });
-    setIsDetteDialogOpen(false);
+      await createCreanceOuDette(detteData);
+      
+      setNewDette({
+        name: '',
+        thirdParty: '',
+        amount: '',
+        dueDate: '',
+        description: ''
+      });
+      setIsDetteDialogOpen(false);
+    } catch (err) {
+      console.error('Erreur lors de la création de la dette:', err);
+      alert('Erreur lors de la création de la dette');
+    }
   };
 
   // Export PDF
@@ -300,14 +152,27 @@ export function DebtsCredits() {
   };
 
   // Statistiques
-  const totalCreances = filteredCreances.reduce((sum, c) => sum + c.montantRestant, 0);
-  const totalDettes = filteredDettes.reduce((sum, d) => sum + d.montantRestant, 0);
+  const totalCreances = filteredCreances.reduce((sum, c) => sum + c.amount, 0);
+  const totalDettes = filteredDettes.reduce((sum, d) => sum + d.amount, 0);
   const soldeNet = totalCreances - totalDettes;
   
-  const creancesEchues = filteredCreances.filter(c => c.statut === 'echu');
-  const dettesEchues = filteredDettes.filter(d => d.statut === 'echu');
-  const creancesLitigieuses = filteredCreances.filter(c => c.statut === 'litigieux');
-  const dettesLitigieuses = filteredDettes.filter(d => d.statut === 'litigieux');
+  const creancesEchues = filteredCreances.filter(c => c.status === 'echu');
+  const dettesEchues = filteredDettes.filter(d => d.status === 'echu');
+  const creancesLitigieuses = filteredCreances.filter(c => c.status === 'litigieux');
+  const dettesLitigieuses = filteredDettes.filter(d => d.status === 'litigieux');
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 bg-gray-200 rounded animate-pulse" />
+        <div className="grid gap-4 md:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-24 bg-gray-200 rounded animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -318,6 +183,9 @@ export function DebtsCredits() {
           <p className="mt-2 text-gray-600">
             Suivi des créances clients et dettes fournisseurs (impact sur résultat SMT)
           </p>
+          {error && (
+            <p className="mt-2 text-red-600">Erreur: {error}</p>
+          )}
         </div>
         <div className="flex gap-2 mt-4 sm:mt-0">
           <Select value={selectedExercice} onValueChange={setSelectedExercice}>
@@ -415,19 +283,19 @@ export function DebtsCredits() {
               {creancesEchues.length > 0 && (
                 <div className="text-red-800">
                   <p className="font-medium">Créances échues: {creancesEchues.length}</p>
-                  <p>Montant: {formatCurrency(creancesEchues.reduce((sum, c) => sum + c.montantRestant, 0))}</p>
+                  <p>Montant: {formatCurrency(creancesEchues.reduce((sum, c) => sum + c.amount, 0))}</p>
                 </div>
               )}
               {dettesEchues.length > 0 && (
                 <div className="text-red-800">
                   <p className="font-medium">Dettes échues: {dettesEchues.length}</p>
-                  <p>Montant: {formatCurrency(dettesEchues.reduce((sum, d) => sum + d.montantRestant, 0))}</p>
+                  <p>Montant: {formatCurrency(dettesEchues.reduce((sum, d) => sum + d.amount, 0))}</p>
                 </div>
               )}
               {creancesLitigieuses.length > 0 && (
                 <div className="text-red-800">
                   <p className="font-medium">Litiges: {creancesLitigieuses.length}</p>
-                  <p>Montant: {formatCurrency(creancesLitigieuses.reduce((sum, c) => sum + c.montantRestant, 0))}</p>
+                  <p>Montant: {formatCurrency(creancesLitigieuses.reduce((sum, c) => sum + c.amount, 0))}</p>
                 </div>
               )}
             </div>
@@ -460,59 +328,40 @@ export function DebtsCredits() {
                   </DialogHeader>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="clientNom">Nom du client</Label>
+                      <Label htmlFor="name">Nom de la créance</Label>
                       <Input
-                        id="clientNom"
-                        value={newCreance.clientNom}
-                        onChange={(e) => setNewCreance({...newCreance, clientNom: e.target.value})}
+                        id="name"
+                        value={newCreance.name}
+                        onChange={(e) => setNewCreance({...newCreance, name: e.target.value})}
+                        placeholder="Ex: Facture services"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="thirdParty">Client</Label>
+                      <Input
+                        id="thirdParty"
+                        value={newCreance.thirdParty}
+                        onChange={(e) => setNewCreance({...newCreance, thirdParty: e.target.value})}
                         placeholder="Nom du client"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="facture">N° Facture</Label>
+                      <Label htmlFor="amount">Montant (MGA)</Label>
                       <Input
-                        id="facture"
-                        value={newCreance.facture}
-                        onChange={(e) => setNewCreance({...newCreance, facture: e.target.value})}
-                        placeholder="F-2024-XXX"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="dateFacture">Date facture</Label>
-                      <Input
-                        id="dateFacture"
-                        type="date"
-                        value={newCreance.dateFacture}
-                        onChange={(e) => setNewCreance({...newCreance, dateFacture: e.target.value})}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="dateEcheance">Date échéance</Label>
-                      <Input
-                        id="dateEcheance"
-                        type="date"
-                        value={newCreance.dateEcheance}
-                        onChange={(e) => setNewCreance({...newCreance, dateEcheance: e.target.value})}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="montant">Montant total (MGA)</Label>
-                      <Input
-                        id="montant"
+                        id="amount"
                         type="number"
-                        value={newCreance.montant}
-                        onChange={(e) => setNewCreance({...newCreance, montant: e.target.value})}
+                        value={newCreance.amount}
+                        onChange={(e) => setNewCreance({...newCreance, amount: e.target.value})}
                         placeholder="0"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="montantPaye">Montant payé (MGA)</Label>
+                      <Label htmlFor="dueDate">Date d'échéance</Label>
                       <Input
-                        id="montantPaye"
-                        type="number"
-                        value={newCreance.montantPaye}
-                        onChange={(e) => setNewCreance({...newCreance, montantPaye: e.target.value})}
-                        placeholder="0"
+                        id="dueDate"
+                        type="date"
+                        value={newCreance.dueDate}
+                        onChange={(e) => setNewCreance({...newCreance, dueDate: e.target.value})}
                       />
                     </div>
                     <div className="col-span-2">
@@ -554,13 +403,10 @@ export function DebtsCredits() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Créance</TableHead>
                       <TableHead>Client</TableHead>
-                      <TableHead>Facture</TableHead>
-                      <TableHead>Date facture</TableHead>
                       <TableHead>Echéance</TableHead>
-                      <TableHead className="text-right">Montant total</TableHead>
-                      <TableHead className="text-right">Payé</TableHead>
-                      <TableHead className="text-right">Restant</TableHead>
+                      <TableHead className="text-right">Montant</TableHead>
                       <TableHead className="text-center">Statut</TableHead>
                       <TableHead>Description</TableHead>
                     </TableRow>
@@ -568,29 +414,26 @@ export function DebtsCredits() {
                   <TableBody>
                     {filteredCreances.map((creance) => (
                       <TableRow key={creance.id}>
-                        <TableCell className="font-medium">{creance.clientNom}</TableCell>
-                        <TableCell>{creance.facture}</TableCell>
-                        <TableCell>{new Date(creance.dateFacture).toLocaleDateString('fr-FR')}</TableCell>
-                        <TableCell>{new Date(creance.dateEcheance).toLocaleDateString('fr-FR')}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(creance.montant)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(creance.montantPaye)}</TableCell>
-                        <TableCell className="text-right font-medium">{formatCurrency(creance.montantRestant)}</TableCell>
+                        <TableCell className="font-medium">{creance.name}</TableCell>
+                        <TableCell>{creance.thirdParty}</TableCell>
+                        <TableCell>{new Date(creance.dueDate).toLocaleDateString('fr-FR')}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(creance.amount)}</TableCell>
                         <TableCell className="text-center">
                           <Badge variant={
-                            creance.statut === 'paye' ? 'default' :
-                            creance.statut === 'en_cours' ? 'secondary' :
-                            creance.statut === 'echu' ? 'destructive' : 'outline'
+                            creance.status === 'paye' ? 'default' :
+                            creance.status === 'en_cours' ? 'secondary' :
+                            creance.status === 'echu' ? 'destructive' : 'outline'
                           }>
-                            {creance.statut === 'paye' ? 'Payée' :
-                             creance.statut === 'en_cours' ? 'En cours' :
-                             creance.statut === 'echu' ? 'Échue' : 'Litige'}
+                            {creance.status === 'paye' ? 'Payée' :
+                             creance.status === 'en_cours' ? 'En cours' :
+                             creance.status === 'echu' ? 'Échue' : 'Litige'}
                           </Badge>
                         </TableCell>
                         <TableCell className="max-w-xs truncate">{creance.description}</TableCell>
                       </TableRow>
                     ))}
                     <TableRow className="border-t-2 font-bold">
-                      <TableCell colSpan={6}>TOTAL CRÉANCES</TableCell>
+                      <TableCell colSpan={3}>TOTAL CRÉANCES</TableCell>
                       <TableCell className="text-right">{formatCurrency(totalCreances)}</TableCell>
                       <TableCell colSpan={2}></TableCell>
                     </TableRow>
@@ -619,59 +462,40 @@ export function DebtsCredits() {
                   </DialogHeader>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="fournisseurNom">Nom du fournisseur</Label>
+                      <Label htmlFor="name">Nom de la dette</Label>
                       <Input
-                        id="fournisseurNom"
-                        value={newDette.fournisseurNom}
-                        onChange={(e) => setNewDette({...newDette, fournisseurNom: e.target.value})}
+                        id="name"
+                        value={newDette.name}
+                        onChange={(e) => setNewDette({...newDette, name: e.target.value})}
+                        placeholder="Ex: Facture électricité"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="thirdParty">Fournisseur</Label>
+                      <Input
+                        id="thirdParty"
+                        value={newDette.thirdParty}
+                        onChange={(e) => setNewDette({...newDette, thirdParty: e.target.value})}
                         placeholder="Nom du fournisseur"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="facture">N° Facture</Label>
+                      <Label htmlFor="amount">Montant (MGA)</Label>
                       <Input
-                        id="facture"
-                        value={newDette.facture}
-                        onChange={(e) => setNewDette({...newDette, facture: e.target.value})}
-                        placeholder="FA-2024-XXX"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="dateFacture">Date facture</Label>
-                      <Input
-                        id="dateFacture"
-                        type="date"
-                        value={newDette.dateFacture}
-                        onChange={(e) => setNewDette({...newDette, dateFacture: e.target.value})}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="dateEcheance">Date échéance</Label>
-                      <Input
-                        id="dateEcheance"
-                        type="date"
-                        value={newDette.dateEcheance}
-                        onChange={(e) => setNewDette({...newDette, dateEcheance: e.target.value})}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="montant">Montant total (MGA)</Label>
-                      <Input
-                        id="montant"
+                        id="amount"
                         type="number"
-                        value={newDette.montant}
-                        onChange={(e) => setNewDette({...newDette, montant: e.target.value})}
+                        value={newDette.amount}
+                        onChange={(e) => setNewDette({...newDette, amount: e.target.value})}
                         placeholder="0"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="montantPaye">Montant payé (MGA)</Label>
+                      <Label htmlFor="dueDate">Date d'échéance</Label>
                       <Input
-                        id="montantPaye"
-                        type="number"
-                        value={newDette.montantPaye}
-                        onChange={(e) => setNewDette({...newDette, montantPaye: e.target.value})}
-                        placeholder="0"
+                        id="dueDate"
+                        type="date"
+                        value={newDette.dueDate}
+                        onChange={(e) => setNewDette({...newDette, dueDate: e.target.value})}
                       />
                     </div>
                     <div className="col-span-2">
@@ -697,13 +521,10 @@ export function DebtsCredits() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Dette</TableHead>
                       <TableHead>Fournisseur</TableHead>
-                      <TableHead>Facture</TableHead>
-                      <TableHead>Date facture</TableHead>
                       <TableHead>Echéance</TableHead>
-                      <TableHead className="text-right">Montant total</TableHead>
-                      <TableHead className="text-right">Payé</TableHead>
-                      <TableHead className="text-right">Restant</TableHead>
+                      <TableHead className="text-right">Montant</TableHead>
                       <TableHead className="text-center">Statut</TableHead>
                       <TableHead>Description</TableHead>
                     </TableRow>
@@ -711,29 +532,26 @@ export function DebtsCredits() {
                   <TableBody>
                     {filteredDettes.map((dette) => (
                       <TableRow key={dette.id}>
-                        <TableCell className="font-medium">{dette.fournisseurNom}</TableCell>
-                        <TableCell>{dette.facture}</TableCell>
-                        <TableCell>{new Date(dette.dateFacture).toLocaleDateString('fr-FR')}</TableCell>
-                        <TableCell>{new Date(dette.dateEcheance).toLocaleDateString('fr-FR')}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(dette.montant)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(dette.montantPaye)}</TableCell>
-                        <TableCell className="text-right font-medium">{formatCurrency(dette.montantRestant)}</TableCell>
+                        <TableCell className="font-medium">{dette.name}</TableCell>
+                        <TableCell>{dette.thirdParty}</TableCell>
+                        <TableCell>{new Date(dette.dueDate).toLocaleDateString('fr-FR')}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(dette.amount)}</TableCell>
                         <TableCell className="text-center">
                           <Badge variant={
-                            dette.statut === 'paye' ? 'default' :
-                            dette.statut === 'en_cours' ? 'secondary' :
-                            dette.statut === 'echu' ? 'destructive' : 'outline'
+                            dette.status === 'paye' ? 'default' :
+                            dette.status === 'en_cours' ? 'secondary' :
+                            dette.status === 'echu' ? 'destructive' : 'outline'
                           }>
-                            {dette.statut === 'paye' ? 'Payée' :
-                             dette.statut === 'en_cours' ? 'En cours' :
-                             dette.statut === 'echu' ? 'Échue' : 'Litige'}
+                            {dette.status === 'paye' ? 'Payée' :
+                             dette.status === 'en_cours' ? 'En cours' :
+                             dette.status === 'echu' ? 'Échue' : 'Litige'}
                           </Badge>
                         </TableCell>
                         <TableCell className="max-w-xs truncate">{dette.description}</TableCell>
                       </TableRow>
                     ))}
                     <TableRow className="border-t-2 font-bold">
-                      <TableCell colSpan={6}>TOTAL DETTES</TableCell>
+                      <TableCell colSpan={3}>TOTAL DETTES</TableCell>
                       <TableCell className="text-right text-red-600">{formatCurrency(totalDettes)}</TableCell>
                       <TableCell colSpan={2}></TableCell>
                     </TableRow>

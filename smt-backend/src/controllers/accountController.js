@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const { Account, Transaction } = require('../models');
 const { asyncHandler, AppError } = require('../middleware/errorHandler');
 
@@ -16,7 +17,9 @@ const getAccounts = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     count: accounts.length,
-    data: accounts
+    data: {
+      accounts: accounts
+    }
   });
 });
 
@@ -32,7 +35,9 @@ const getAccount = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    data: account
+    data: {
+      account: account
+    }
   });
 });
 
@@ -55,7 +60,9 @@ const createAccount = asyncHandler(async (req, res) => {
   res.status(201).json({
     success: true,
     message: 'Compte créé avec succès',
-    data: account
+    data: {
+      account: account
+    }
   });
 });
 
@@ -81,7 +88,9 @@ const updateAccount = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: 'Compte mis à jour avec succès',
-    data: updatedAccount
+    data: {
+      account: updatedAccount
+    }
   });
 });
 
@@ -337,6 +346,128 @@ const getAccountStats = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Effectuer un virement entre comptes
+// @route   POST /api/accounts/transfer
+// @access  Private
+const transferBetweenAccounts = asyncHandler(async (req, res) => {
+  const { fromAccountId, toAccountId, amount, description } = req.body;
+
+  // Validation
+  if (!fromAccountId || !toAccountId || !amount || amount <= 0) {
+    throw new AppError('Données de virement invalides', 400);
+  }
+
+  if (fromAccountId === toAccountId) {
+    throw new AppError('Les comptes source et destination doivent être différents', 400);
+  }
+
+  // Vérifier que les comptes existent
+  const fromAccount = await Account.findById(fromAccountId);
+  const toAccount = await Account.findById(toAccountId);
+
+  if (!fromAccount || !toAccount) {
+    throw new AppError('Un ou plusieurs comptes introuvables', 404);
+  }
+
+  if (!fromAccount.isActive || !toAccount.isActive) {
+    throw new AppError('Les comptes doivent être actifs pour effectuer un virement', 400);
+  }
+
+  // Vérifier le solde suffisant
+  if (fromAccount.balance < amount) {
+    throw new AppError('Solde insuffisant pour effectuer le virement', 400);
+  }
+
+  // Utiliser une transaction MongoDB pour assurer la cohérence
+  const session = await mongoose.startSession();
+  
+  try {
+    await session.withTransaction(async () => {
+      // Débiter le compte source
+      await Account.findByIdAndUpdate(
+        fromAccountId,
+        {
+          $inc: { balance: -amount },
+          lastTransactionDate: new Date()
+        },
+        { session }
+      );
+
+      // Créditer le compte destination
+      await Account.findByIdAndUpdate(
+        toAccountId,
+        {
+          $inc: { balance: amount },
+          lastTransactionDate: new Date()
+        },
+        { session }
+      );
+
+      // Créer les transactions correspondantes
+      const reference = `VIR-${new Date().getFullYear()}-${Date.now()}`;
+      
+      // Transaction de débit
+      await Transaction.create([
+        {
+          type: 'depense',
+          amount: amount,
+          description: description || `Virement vers ${toAccount.name}`,
+          category: 'virement_interne',
+          subcategory: 'Virement sortant',
+          accountId: fromAccountId,
+          date: new Date(),
+          reference: reference,
+          createdBy: req.user?.id
+        }
+      ], { session });
+
+      // Transaction de crédit
+      await Transaction.create([
+        {
+          type: 'recette',
+          amount: amount,
+          description: description || `Virement depuis ${fromAccount.name}`,
+          category: 'virement_interne',
+          subcategory: 'Virement entrant',
+          accountId: toAccountId,
+          date: new Date(),
+          reference: reference,
+          createdBy: req.user?.id
+        }
+      ], { session });
+    });
+
+    // Récupérer les comptes mis à jour
+    const updatedFromAccount = await Account.findById(fromAccountId);
+    const updatedToAccount = await Account.findById(toAccountId);
+
+    res.json({
+      success: true,
+      message: 'Virement effectué avec succès',
+      data: {
+        transfer: {
+          reference,
+          amount,
+          description,
+          fromAccount: {
+            id: updatedFromAccount._id,
+            name: updatedFromAccount.name,
+            newBalance: updatedFromAccount.balance
+          },
+          toAccount: {
+            id: updatedToAccount._id,
+            name: updatedToAccount.name,
+            newBalance: updatedToAccount.balance
+          },
+          date: new Date()
+        }
+      }
+    });
+  } finally {
+    await session.endSession();
+  }
+});
+
 module.exports = {
   getAccounts,
   getAccount,
@@ -347,5 +478,6 @@ module.exports = {
   getTreasuryBalance,
   getBalanceHistory,
   reconcileAccount,
-  getAccountStats
+  getAccountStats,
+  transferBetweenAccounts
 };

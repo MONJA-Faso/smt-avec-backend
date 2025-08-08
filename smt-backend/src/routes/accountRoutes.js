@@ -12,7 +12,8 @@ const {
   getTreasuryBalance,
   getBalanceHistory,
   reconcileAccount,
-  getAccountStats
+  getAccountStats,
+  transferBetweenAccounts
 } = require('../controllers/accountController');
 
 // Import des middlewares
@@ -29,6 +30,9 @@ router.get('/treasury', getTreasuryBalance);
 router.get('/stats', getAccountStats);
 router.get('/:id', validateObjectId(), getAccount);
 router.get('/:id/balance-history', validateObjectId(), getBalanceHistory);
+
+// Route pour les virements (accessible à tous les utilisateurs authentifiés)
+router.post('/transfer', transferBetweenAccounts);
 
 // Routes nécessitant des privilèges admin
 router.post('/', authorize('admin'), validate(accountValidation.create), createAccount);
