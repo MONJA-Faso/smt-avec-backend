@@ -200,10 +200,10 @@ export function Books() {
                   <SelectValue placeholder="Tous" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tous</SelectItem>
-                  <SelectItem value="recette">Recettes uniquement</SelectItem>
-                  <SelectItem value="depense">Dépenses uniquement</SelectItem>
-                </SelectContent>
++                     <SelectItem key="all" value="all">Tous</SelectItem>
++                     <SelectItem key="recette" value="recette">Recettes uniquement</SelectItem>
++                     <SelectItem key="depense" value="depense">Dépenses uniquement</SelectItem>
++               </SelectContent>
               </Select>
             </div>
             <div className="flex items-end">

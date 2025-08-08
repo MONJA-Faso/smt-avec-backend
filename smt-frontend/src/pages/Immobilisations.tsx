@@ -484,12 +484,12 @@ export function Immobilisations() {
                       <SelectValue placeholder="Sélectionner une catégorie" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Matériel de transport">Matériel de transport</SelectItem>
-                      <SelectItem value="Matériel informatique">Matériel informatique</SelectItem>
-                      <SelectItem value="Matériel industriel">Matériel industriel</SelectItem>
-                      <SelectItem value="Mobilier de bureau">Mobilier de bureau</SelectItem>
-                      <SelectItem value="Installations">Installations</SelectItem>
-                    </SelectContent>
+ +                         <SelectItem key="transport" value="Matériel de transport">Matériel de transport</SelectItem>
+ +                         <SelectItem key="informatique" value="Matériel informatique">Matériel informatique</SelectItem>
+ +                         <SelectItem key="industriel" value="Matériel industriel">Matériel industriel</SelectItem>
+ +                         <SelectItem key="mobilier" value="Mobilier de bureau">Mobilier de bureau</SelectItem>
+ +                         <SelectItem key="installations" value="Installations">Installations</SelectItem>
+ +                  </SelectContent>
                   </Select>
                 </div>
                 <div>
@@ -521,11 +521,11 @@ export function Immobilisations() {
                       <SelectValue placeholder="Sélectionner la durée" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="3">3 ans (Informatique)</SelectItem>
-                      <SelectItem value="5">5 ans (Véhicules, mobilier)</SelectItem>
-                      <SelectItem value="10">10 ans (Matériel industriel)</SelectItem>
-                      <SelectItem value="20">20 ans (Bâtiments)</SelectItem>
-                    </SelectContent>
+ +                         <SelectItem key="3" value="3">3 ans (Informatique)</SelectItem>
+ +                         <SelectItem key="5" value="5">5 ans (Véhicules, mobilier)</SelectItem>
+ +                         <SelectItem key="10" value="10">10 ans (Matériel industriel)</SelectItem>
+ +                         <SelectItem key="20" value="20">20 ans (Bâtiments)</SelectItem>
+ +                  </SelectContent>
                   </Select>
                 </div>
                 <Button 
@@ -607,11 +607,11 @@ export function Immobilisations() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Toutes</SelectItem>
-                  <SelectItem value="active">Actives</SelectItem>
-                  <SelectItem value="cedee">Cédées</SelectItem>
-                  <SelectItem value="obsolete">Obsolètes</SelectItem>
-                </SelectContent>
+ +                     <SelectItem key="all" value="all">Toutes</SelectItem>
+ +                     <SelectItem key="active" value="active">Actives</SelectItem>
+ +                     <SelectItem key="cedee" value="cedee">Cédées</SelectItem>
+ +                     <SelectItem key="obsolete" value="obsolete">Obsolètes</SelectItem>
+ +              </SelectContent>
               </Select>
             </div>
             <div>
@@ -621,11 +621,13 @@ export function Immobilisations() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Toutes</SelectItem>
-                  {categories.map(cat => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                  ))}
-                </SelectContent>
+                    <SelectItem key="all" value="all">Toutes</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
               </Select>
             </div>
           </div>
