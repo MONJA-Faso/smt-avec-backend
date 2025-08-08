@@ -238,8 +238,8 @@ export function Stocks() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem key="Marchandises" value="Marchandises">Marchandises</SelectItem>
-                      <SelectItem key="Matieres" value="Matières premières">Matières premières</SelectItem>
-                      <SelectItem key="Produits" value="Produits finis">Produits finis</SelectItem>
+                      <SelectItem key="Matieres" value="Matieres-premieres">Matières premières</SelectItem>
+                      <SelectItem key="Produits" value="Produits-finis">Produits finis</SelectItem>
                       <SelectItem key="Fournitures" value="Fournitures">Fournitures</SelectItem>
                       <SelectItem key="Emballages" value="Emballages">Emballages</SelectItem>
                     </SelectContent>
