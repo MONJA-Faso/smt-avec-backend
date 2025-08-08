@@ -475,7 +475,7 @@ export function Transactions() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem key="all" value="all">Tous</SelectItem>
-                {accounts.map((account) => (
+                {accounts && accounts.map((account) => (
                   <SelectItem key={account.id} value={account.id}>
                     {account.name}
                   </SelectItem>
