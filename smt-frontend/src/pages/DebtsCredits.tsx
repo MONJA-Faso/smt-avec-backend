@@ -193,9 +193,9 @@ export function DebtsCredits() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="2024">2024</SelectItem>
-              <SelectItem value="2023">2023</SelectItem>
-              <SelectItem value="2022">2022</SelectItem>
+              <SelectItem key="2024" value="2024">2024</SelectItem>
+              <SelectItem key="2023" value="2023">2023</SelectItem>
+              <SelectItem key="2022" value="2022">2022</SelectItem>
             </SelectContent>
           </Select>
           
@@ -390,11 +390,11 @@ export function DebtsCredits() {
                     <SelectValue placeholder="Filtrer par statut" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tous les statuts</SelectItem>
-                    <SelectItem value="en_cours">En cours</SelectItem>
-                    <SelectItem value="echu">Echues</SelectItem>
-                    <SelectItem value="paye">Payées</SelectItem>
-                    <SelectItem value="litigieux">Litigieuses</SelectItem>
+                    <SelectItem key="all" value="all">Tous les statuts</SelectItem>
+                    <SelectItem key="en_cours" value="en_cours">En cours</SelectItem>
+                    <SelectItem key="echu" value="echu">Echues</SelectItem>
+                    <SelectItem key="paye" value="paye">Payées</SelectItem>
+                    <SelectItem key="litigieux" value="litigieux">Litigieuses</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
