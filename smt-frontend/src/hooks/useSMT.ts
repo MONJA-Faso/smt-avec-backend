@@ -54,7 +54,24 @@ export function useAccounts() {
     }
   };
 
-  return { accounts: accounts || [], loading, error, fetchAccounts, updateAccount };
+  const transferBetweenAccounts = async (transferData: {
+    fromAccountId: string;
+    toAccountId: string;
+    amount: number;
+    description?: string;
+  }) => {
+    try {
+      const result = await accountsApi.transferBetweenAccounts(transferData);
+      // Rafraîchir la liste des comptes après le virement
+      await fetchAccounts();
+      return result;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors du virement');
+      throw err;
+    }
+  };
+
+  return { accounts: accounts || [], loading, error, fetchAccounts, updateAccount, transferBetweenAccounts };
 }
 
 // Hook pour les transactions

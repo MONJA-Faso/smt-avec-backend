@@ -158,13 +158,23 @@ function TransferForm({
 
 export function Accounts() {
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
-  const { accounts, loading, error } = useAccounts();
+  const { accounts, loading, error, transferBetweenAccounts } = useAccounts();
 
   const handleTransfer = async (data: any) => {
-    // Simulation du virement
-    console.log('Virement:', data);
-    alert(`Virement de ${formatCurrency(data.amount)} effectué de ${data.fromAccountId} vers ${data.toAccountId}`);
-    setTransferDialogOpen(false);
+    try {
+      const result = await transferBetweenAccounts({
+        fromAccountId: data.fromAccountId,
+        toAccountId: data.toAccountId,
+        amount: data.amount,
+        description: data.description
+      });
+      
+      alert(`Virement réussi !\nMontant: ${formatCurrency(result.amount)}\nRéférence: ${result.reference}`);
+      setTransferDialogOpen(false);
+    } catch (err) {
+      console.error('Erreur lors du virement:', err);
+      alert('Erreur lors du virement. Veuillez réessayer.');
+    }
   };
 
   if (loading) {
